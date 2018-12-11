@@ -2,14 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://toads.github.io/2018/12/10/%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAjupyter%E7%BD%91%E7%AB%99/</loc>
+    <loc>http://toads.github.io/2018/12/11/%E5%9C%A8window%E4%B8%8A%E9%85%8D%E7%BD%AE%E4%B8%80%E4%B8%AA%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E7%9A%84jupyter-notebook/</loc>
     
-    <lastmod>2018-12-10T01:53:57.990Z</lastmod>
+    <lastmod>2018-12-11T13:10:24.573Z</lastmod>
     
   </url>
   
   <url>
-    <loc>http://toads.github.io/2018/12/10/hello-world/</loc>
+    <loc>http://toads.github.io/2018/12/10/%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AAjupyter%E7%BD%91%E7%AB%99/</loc>
+    
+    <lastmod>2018-12-10T01:57:21.016Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://toads.github.io/2018/12/11/hello-world/</loc>
     
     <lastmod>2018-12-10T01:33:20.104Z</lastmod>
     
