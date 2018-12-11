@@ -2,6 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://toads.github.io/categories/index.html</loc>
+    
+    <lastmod>2018-12-11T14:12:31.876Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://toads.github.io/tags/index.html</loc>
+    
+    <lastmod>2018-12-11T14:12:15.519Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://toads.github.io/2018/12/11/%E5%9C%A8window%E4%B8%8A%E9%85%8D%E7%BD%AE%E4%B8%80%E4%B8%AA%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E7%9A%84jupyter-notebook/</loc>
     
     <lastmod>2018-12-11T13:10:24.573Z</lastmod>
