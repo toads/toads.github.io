@@ -259,6 +259,156 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="toads">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="toads's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/12/13/UNIX环境高级编程读书笔记-一/" itemprop="url">UNIX环境高级编程读书笔记(一)</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-12-13T11:39:19+08:00">
+                2018-12-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/12/13/UNIX环境高级编程读书笔记-一/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/12/13/UNIX环境高级编程读书笔记-一/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="第一章"><a href="#第一章" class="headerlink" title="第一章"></a>第一章</h2><p>第一章主要是讲UNIX的基础知识包括:</p>
+<pre><code>1. 体系结构
+2. 文件目录
+3. 进程
+4. 出错处理
+5. 用户标识
+6. 系统调用
+</code></pre><h4 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">	subgraph 应用程序</span><br><span class="line">		subgraph shell 	公用库函数</span><br><span class="line">			subgraph 系统调用</span><br><span class="line">			core((内核))</span><br><span class="line">			end</span><br><span class="line">		end</span><br><span class="line">    end</span><br></pre></td></tr></table></figure>
+<h4 id="用户口令登陆"><a href="#用户口令登陆" class="headerlink" title="用户口令登陆"></a>用户口令登陆</h4><p><code>/etc/shadow</code></p>
+<p><code>/etc/passwd</code></p>
+<p><code>sar:x:205:105:Ste:/home/sar:/bin/ksh</code></p>
+<h4 id="输入输出"><a href="#输入输出" class="headerlink" title="输入输出"></a>输入输出</h4><ol>
+<li><p>文件描述符</p>
+</li>
+<li><p>标准输入输出<code>ls&gt;file.list</code> <code>nc -l 9099 &lt; test.txt</code></p>
+</li>
+<li>缓冲区 IO操作需要缓冲区来存储数据</li>
+<li>标准IO <code>printf</code></li>
+</ol>
+<h4 id="进程与程序"><a href="#进程与程序" class="headerlink" title="进程与程序"></a>进程与程序</h4><p>程序: 读入内存中由 <code>exec</code> 函数调用的一个在磁盘中的可执行文件</p>
+<p>进程: 程序执行的实例 (process)</p>
+<h4 id="用户ID-组ID-附属组ID"><a href="#用户ID-组ID-附属组ID" class="headerlink" title="用户ID 组ID 附属组ID"></a>用户ID 组ID 附属组ID</h4><h4 id="信号-敏感变量"><a href="#信号-敏感变量" class="headerlink" title="信号,敏感变量"></a>信号,敏感变量</h4><h4 id="标准库"><a href="#标准库" class="headerlink" title="标准库"></a>标准库</h4>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://toads.github.io/2018/12/11/hello-world/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
@@ -694,7 +844,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -707,7 +857,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
@@ -776,6 +926,16 @@
 
 
 
+
+
+  <script src="https://unpkg.com/mermaid@<%= theme.mermaid.version %>/dist/mermaid.min.js"></script>
+    <script>
+    if (window.mermaid) {
+              mermaid.initialize({theme: 'forest'});
+                  
+    }
+      </script>
+      
 
         
 

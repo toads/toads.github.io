@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="toads's blog">
+  <meta name="keywords" content="unix,">
 
 
 
@@ -79,14 +79,18 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="about">
-<meta property="og:url" content="http://toads.github.io/about/index.html">
+<meta name="description" content="第一章第一章主要是讲UNIX的基础知识包括: 1. 体系结构 2. 文件目录 3. 进程 4. 出错处理 5. 用户标识 6. 系统调用 体系结构12345678graph TB	subgraph 应用程序		subgraph shell 	公用库函数			subgraph 系统调用			core((内核))			end		end    end 用户口令登陆/etc/shadow /etc/pas">
+<meta name="keywords" content="unix">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UNIX环境高级编程读书笔记(一)">
+<meta property="og:url" content="http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/index.html">
 <meta property="og:site_name" content="toads&#39;s blog">
+<meta property="og:description" content="第一章第一章主要是讲UNIX的基础知识包括: 1. 体系结构 2. 文件目录 3. 进程 4. 出错处理 5. 用户标识 6. 系统调用 体系结构12345678graph TB	subgraph 应用程序		subgraph shell 	公用库函数			subgraph 系统调用			core((内核))			end		end    end 用户口令登陆/etc/shadow /etc/pas">
 <meta property="og:locale" content="zh_Hans">
-<meta property="og:updated_time" content="2018-12-12T06:06:59.217Z">
+<meta property="og:updated_time" content="2018-12-13T03:39:19.432Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="about">
+<meta name="twitter:title" content="UNIX环境高级编程读书笔记(一)">
+<meta name="twitter:description" content="第一章第一章主要是讲UNIX的基础知识包括: 1. 体系结构 2. 文件目录 3. 进程 4. 出错处理 5. 用户标识 6. 系统调用 体系结构12345678graph TB	subgraph 应用程序		subgraph shell 	公用库函数			subgraph 系统调用			core((内核))			end		end    end 用户口令登陆/etc/shadow /etc/pas">
 
 
 
@@ -116,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://toads.github.io/about/">
+  <link rel="canonical" href="http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/">
 
 
 
 
 
-  <title>about | toads's blog</title>
+  <title>UNIX环境高级编程读书笔记(一) | toads's blog</title>
   
 
 
@@ -247,33 +251,192 @@
 
   <div id="posts" class="posts-expand">
     
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="toads">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="toads's blog">
+    </span>
+
     
-    
-    <div class="post-block page">
       <header class="post-header">
 
-	<h2 class="post-title" itemprop="name headline">about</h2>
-
-
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
         
         
+          <h2 class="post-title" itemprop="name headline">UNIX环境高级编程读书笔记(一)</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-12-13T11:39:19+08:00">
+                2018-12-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
           
-        
-      </div>
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/12/13/UNIX环境高级编程读书笔记-一/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/12/13/UNIX环境高级编程读书笔记-一/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
       
       
+
+      
+        <h2 id="第一章"><a href="#第一章" class="headerlink" title="第一章"></a>第一章</h2><p>第一章主要是讲UNIX的基础知识包括:</p>
+<pre><code>1. 体系结构
+2. 文件目录
+3. 进程
+4. 出错处理
+5. 用户标识
+6. 系统调用
+</code></pre><h4 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">	subgraph 应用程序</span><br><span class="line">		subgraph shell 	公用库函数</span><br><span class="line">			subgraph 系统调用</span><br><span class="line">			core((内核))</span><br><span class="line">			end</span><br><span class="line">		end</span><br><span class="line">    end</span><br></pre></td></tr></table></figure>
+<h4 id="用户口令登陆"><a href="#用户口令登陆" class="headerlink" title="用户口令登陆"></a>用户口令登陆</h4><p><code>/etc/shadow</code></p>
+<p><code>/etc/passwd</code></p>
+<p><code>sar:x:205:105:Ste:/home/sar:/bin/ksh</code></p>
+<h4 id="输入输出"><a href="#输入输出" class="headerlink" title="输入输出"></a>输入输出</h4><ol>
+<li><p>文件描述符</p>
+</li>
+<li><p>标准输入输出<code>ls&gt;file.list</code> <code>nc -l 9099 &lt; test.txt</code></p>
+</li>
+<li>缓冲区 IO操作需要缓冲区来存储数据</li>
+<li>标准IO <code>printf</code></li>
+</ol>
+<h4 id="进程与程序"><a href="#进程与程序" class="headerlink" title="进程与程序"></a>进程与程序</h4><p>程序: 读入内存中由 <code>exec</code> 函数调用的一个在磁盘中的可执行文件</p>
+<p>进程: 程序执行的实例 (process)</p>
+<h4 id="用户ID-组ID-附属组ID"><a href="#用户ID-组ID-附属组ID" class="headerlink" title="用户ID 组ID 附属组ID"></a>用户ID 组ID 附属组ID</h4><h4 id="信号-敏感变量"><a href="#信号-敏感变量" class="headerlink" title="信号,敏感变量"></a>信号,敏感变量</h4><h4 id="标准库"><a href="#标准库" class="headerlink" title="标准库"></a>标准库</h4>
       
     </div>
     
     
     
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:</strong>
+    toads
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/" title="UNIX环境高级编程读书笔记(一)">http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>
+    All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> unless stating additionally.
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/unix/" rel="tag"># unix</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/11/hello-world/" rel="next" title="Hello World">
+                <i class="fa fa-chevron-left"></i> Hello World
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
   </div>
 
 
@@ -316,8 +479,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
@@ -378,6 +550,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#第一章"><span class="nav-number">1.</span> <span class="nav-text">第一章</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#体系结构"><span class="nav-number">1.0.1.</span> <span class="nav-text">体系结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用户口令登陆"><span class="nav-number">1.0.2.</span> <span class="nav-text">用户口令登陆</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#输入输出"><span class="nav-number">1.0.3.</span> <span class="nav-text">输入输出</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#进程与程序"><span class="nav-number">1.0.4.</span> <span class="nav-text">进程与程序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用户ID-组ID-附属组ID"><span class="nav-number">1.0.5.</span> <span class="nav-text">用户ID 组ID 附属组ID</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#信号-敏感变量"><span class="nav-number">1.0.6.</span> <span class="nav-text">信号,敏感变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#标准库"><span class="nav-number">1.0.7.</span> <span class="nav-text">标准库</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -552,9 +740,9 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'http://toads.github.io/about/index.html';
-          this.page.identifier = 'about/index.html';
-          this.page.title = 'about';
+          this.page.url = 'http://toads.github.io/2018/12/13/UNIX环境高级编程读书笔记-一/';
+          this.page.identifier = '2018/12/13/UNIX环境高级编程读书笔记-一/';
+          this.page.title = 'UNIX环境高级编程读书笔记(一)';
         };
         var d = document, s = d.createElement('script');
         s.src = 'https://toads.disqus.com/embed.js';
