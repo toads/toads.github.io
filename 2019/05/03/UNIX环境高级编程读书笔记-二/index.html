@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="python,jupyter notebook,">
+  <meta name="keywords" content="unix,">
 
 
 
@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="想在电脑上快速的使用 python,做一些运算, ipython 是个不错的选择, 但是毕竟纯命令行, 还是有些硬核,不如试试 Jupyter notebook 吧!">
-<meta name="keywords" content="python,jupyter notebook">
+<meta name="description" content="第二章:  UNIX 标准及实现     主要介绍了标准头文件, 拓展头文件, 一些限制,还有选项与一些基本系统数据类型.">
+<meta name="keywords" content="unix">
 <meta property="og:type" content="article">
-<meta property="og:title" content="在window上配置一个开机自启的jupyter_notebook">
-<meta property="og:url" content="http://toads.github.io/2018/12/11/在window上配置一个开机自启的jupyter-notebook/index.html">
+<meta property="og:title" content="UNIX环境高级编程读书笔记-二">
+<meta property="og:url" content="http://toads.github.io/2019/05/03/UNIX环境高级编程读书笔记-二/index.html">
 <meta property="og:site_name" content="toads&#39;s blog">
-<meta property="og:description" content="想在电脑上快速的使用 python,做一些运算, ipython 是个不错的选择, 但是毕竟纯命令行, 还是有些硬核,不如试试 Jupyter notebook 吧!">
+<meta property="og:description" content="第二章:  UNIX 标准及实现     主要介绍了标准头文件, 拓展头文件, 一些限制,还有选项与一些基本系统数据类型.">
 <meta property="og:locale" content="zh_Hans">
-<meta property="og:updated_time" content="2018-12-11T13:10:24.573Z">
+<meta property="og:updated_time" content="2019-05-03T13:04:46.237Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="在window上配置一个开机自启的jupyter_notebook">
-<meta name="twitter:description" content="想在电脑上快速的使用 python,做一些运算, ipython 是个不错的选择, 但是毕竟纯命令行, 还是有些硬核,不如试试 Jupyter notebook 吧!">
+<meta name="twitter:title" content="UNIX环境高级编程读书笔记-二">
+<meta name="twitter:description" content="第二章:  UNIX 标准及实现     主要介绍了标准头文件, 拓展头文件, 一些限制,还有选项与一些基本系统数据类型.">
 
 
 
@@ -120,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://toads.github.io/2018/12/11/在window上配置一个开机自启的jupyter-notebook/">
+  <link rel="canonical" href="http://toads.github.io/2019/05/03/UNIX环境高级编程读书笔记-二/">
 
 
 
 
 
-  <title>在window上配置一个开机自启的jupyter_notebook | toads's blog</title>
+  <title>UNIX环境高级编程读书笔记-二 | toads's blog</title>
   
 
 
@@ -272,7 +272,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2018/12/11/在window上配置一个开机自启的jupyter-notebook/">
+    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2019/05/03/UNIX环境高级编程读书笔记-二/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="toads">
@@ -289,7 +289,7 @@
 
         
         
-          <h2 class="post-title" itemprop="name headline">在window上配置一个开机自启的jupyter_notebook</h2>
+          <h2 class="post-title" itemprop="name headline">UNIX环境高级编程读书笔记-二</h2>
         
 
         <div class="post-meta">
@@ -301,8 +301,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-12-11T21:10:24+08:00">
-                2018-12-11
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-05-03T21:04:46+08:00">
+                2019-05-03
               </time>
             
 
@@ -320,8 +320,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2018/12/11/在window上配置一个开机自启的jupyter-notebook/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/12/11/在window上配置一个开机自启的jupyter-notebook/" itemprop="commentCount"></span>
+                <a href="/2019/05/03/UNIX环境高级编程读书笔记-二/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/03/UNIX环境高级编程读书笔记-二/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -349,42 +349,370 @@
       
 
       
-        <p>想在电脑上快速的使用 python,做一些运算, ipython 是个不错的选择, 但是毕竟纯命令行, 还是有些硬核,不如试试 Jupyter notebook 吧!</p>
+        <p>第二章:  UNIX 标准及实现    </p>
+<p>主要介绍了标准头文件, 拓展头文件, 一些限制,还有选项与一些基本系统数据类型.</p>
 <a id="more"></a>
-<p>###准备 </p>
+<h1 id="UNIX-标准及实现"><a href="#UNIX-标准及实现" class="headerlink" title="UNIX 标准及实现"></a>UNIX 标准及实现</h1><h2 id="UNIX-标准化过程"><a href="#UNIX-标准化过程" class="headerlink" title="UNIX 标准化过程"></a>UNIX 标准化过程</h2><p>UNIX 标准化基于:  </p>
+<p>​    ISO   C                   提供 C 程序的可移植性</p>
+<p>​    IEEE POSIX            可移植操作系统接口</p>
+<p>附 1.</p>
+<h4 id="ISO-C-标准定义的头文件"><a href="#ISO-C-标准定义的头文件" class="headerlink" title="ISO C  标准定义的头文件"></a>ISO C  标准定义的头文件</h4><table>
+<thead>
+<tr>
+<th>头文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;assert.h&gt;</td>
+<td>验证程序断言</td>
+</tr>
+<tr>
+<td>&lt;complex.h&gt;</td>
+<td>支持复数算术运算</td>
+</tr>
+<tr>
+<td>&lt;ctype.h&gt;</td>
+<td>字符类型</td>
+</tr>
+<tr>
+<td>&lt;errno.h&gt;</td>
+<td>出错码</td>
+</tr>
+<tr>
+<td>&lt;fenv.h&gt;</td>
+<td>浮点环境</td>
+</tr>
+<tr>
+<td>&lt;float.h&gt;</td>
+<td>浮点常量</td>
+</tr>
+<tr>
+<td>&lt;inttypes.h&gt;</td>
+<td>整型格式转换</td>
+</tr>
+<tr>
+<td>&lt;iso646.h&gt;</td>
+<td>替代关系操作符宏</td>
+</tr>
+<tr>
+<td>&lt;limits.h&gt;</td>
+<td>实现常量</td>
+</tr>
+<tr>
+<td>&lt;locale.h&gt;</td>
+<td>本地化类型及相关定义</td>
+</tr>
+<tr>
+<td>&lt;math.h&gt;</td>
+<td>数学常量</td>
+</tr>
+<tr>
+<td>&lt;setjmp.h&gt;</td>
+<td>非局部goto</td>
+</tr>
+<tr>
+<td>&lt;signal.h&gt;</td>
+<td>信号</td>
+</tr>
+<tr>
+<td>&lt;stdarg.h&gt;</td>
+<td>可变参数表</td>
+</tr>
+<tr>
+<td>&lt;stdbool.h&gt;</td>
+<td>布尔类型和值</td>
+</tr>
+<tr>
+<td>&lt;stddef.h&gt;</td>
+<td>标准定义</td>
+</tr>
+<tr>
+<td>&lt;stdint.h&gt;</td>
+<td>整型</td>
+</tr>
+<tr>
+<td>&lt;stdio.h&gt;</td>
+<td>标准I/O库</td>
+</tr>
+<tr>
+<td>&lt;stdlib.h&gt;</td>
+<td>实用程序库函数</td>
+</tr>
+<tr>
+<td>&lt;string.h&gt;</td>
+<td>字符串操作</td>
+</tr>
+<tr>
+<td>&lt;tgmath.h&gt;</td>
+<td>通用类型数学宏</td>
+</tr>
+<tr>
+<td>&lt;time.h&gt;</td>
+<td>时间和日期</td>
+</tr>
+<tr>
+<td>&lt;wchar.h&gt;</td>
+<td>扩展的多字节和宽字符支持</td>
+</tr>
+<tr>
+<td>&lt;wctype.h&gt;</td>
+<td>宽字符分类和映射支持</td>
+</tr>
+</tbody>
+</table>
+<h4 id="POSIX-标准定义的必需头文件"><a href="#POSIX-标准定义的必需头文件" class="headerlink" title="POSIX 标准定义的必需头文件"></a>POSIX 标准定义的必需头文件</h4><table>
+<thead>
+<tr>
+<th>头文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;aio.h&gt;</td>
+<td>异步 I/O</td>
+</tr>
+<tr>
+<td>&lt;cpio.h&gt;</td>
+<td>cpio 归档值</td>
+</tr>
+<tr>
+<td>&lt;dirent.h&gt;</td>
+<td>目录项</td>
+</tr>
+<tr>
+<td>&lt;fcntl.h&gt;</td>
+<td>文件控制</td>
+</tr>
+<tr>
+<td>&lt;fnmatch.h&gt;</td>
+<td>文件名匹配类型</td>
+</tr>
+<tr>
+<td>&lt;glob.h&gt;</td>
+<td>路径名模式匹配类型</td>
+</tr>
+<tr>
+<td>&lt;grp.h&gt;</td>
+<td>组文件</td>
+</tr>
+<tr>
+<td>&lt;netdb.h&gt;</td>
+<td>网络数据库操作</td>
+</tr>
+<tr>
+<td>&lt;pwd.h&gt;</td>
+<td>口令文件</td>
+</tr>
+<tr>
+<td>&lt;regex.h&gt;</td>
+<td>正则表达式</td>
+</tr>
+<tr>
+<td>&lt;tar.h&gt;</td>
+<td>tar归档值</td>
+</tr>
+<tr>
+<td>&lt;termios.h&gt;</td>
+<td>终端I/O</td>
+</tr>
+<tr>
+<td>&lt;unistd.h&gt;</td>
+<td>符号常量</td>
+</tr>
+<tr>
+<td>&lt;utime.h&gt;</td>
+<td>文件时间</td>
+</tr>
+<tr>
+<td>&lt;wordexp.h&gt;</td>
+<td>字扩展类型</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>&lt;arpa/inet.h&gt;</td>
+<td>Internet定义</td>
+</tr>
+<tr>
+<td>&lt;net/if..h&gt;</td>
+<td>套接字本地接口</td>
+</tr>
+<tr>
+<td>&lt;netinet/in.h&gt;</td>
+<td>Internet地址族</td>
+</tr>
+<tr>
+<td>&lt;netinet/tcp.h&gt;</td>
+<td>传输控制协议定义</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>&lt;sys/mman.h&gt;</td>
+<td>储存管理声明</td>
+</tr>
+<tr>
+<td>&lt;sys/select.h&gt;</td>
+<td>select函数</td>
+</tr>
+<tr>
+<td>&lt;sys/socket.h&gt;</td>
+<td>套接字接口</td>
+</tr>
+<tr>
+<td>&lt;sys/stat.h&gt;</td>
+<td>文件状态</td>
+</tr>
+<tr>
+<td>&lt;sys/times.h&gt;</td>
+<td>进程时间</td>
+</tr>
+<tr>
+<td>&lt;sys/types.h&gt;</td>
+<td>基本系统数据类型</td>
+</tr>
+<tr>
+<td>&lt;sys/un.h&gt;</td>
+<td>UNIX域套接字定义</td>
+</tr>
+<tr>
+<td>&lt;sys/utsname.h&gt;</td>
+<td>系统名</td>
+</tr>
+<tr>
+<td>&lt;sys/wait.h&gt;</td>
+<td>进程控制</td>
+</tr>
+<tr>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>POSIX 还包括一些可选部分,因为各个版本的可选部分不尽相同, 笔者在这里先不做考证,并不将这些记录下来, 待来日有时间再来考证.</p>
+<p>TODO: </p>
 <ol>
-<li><p>安装好 <code>jupyter notebook</code></p>
-<p><code>cmd</code>  下输入</p>
-<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install jupyter notebook</span><br></pre></td></tr></table></figure>
-<p>或者使用 <a href="https://www.anaconda.com/" target="_blank" rel="noopener">Anaconada</a> 自带 <code>Jupyter</code></p>
-</li>
-<li><p>测试 <code>cmd</code> 下输入</p>
-<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jupyter notebook</span><br></pre></td></tr></table></figure>
-<p>若出现一个<code>jupyter notebook</code> 的网页则说明成功</p>
-<hr>
-<p>####<strong>注意</strong></p>
-<p>这时候留意一下网页,下面有个设置密码的选项,<strong>记得设置一个密码</strong></p>
-<hr>
-</li>
+<li>POSIX 标准定义的XSI 可选头文件</li>
+<li>POSIX 标准定义的可选头文件</li>
+<li>POSIX.1 标准定义的可选头文件</li>
 </ol>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>在桌面或者找一个目录上新建一个txt文件命名为 <code>Jupyter</code></p>
-<figure class="highlight bat"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@<span class="built_in">echo</span> off</span><br><span class="line"><span class="built_in">cd</span> c:\Users\&#123;user_name&#125;\Documents    :: 你的工作目录</span><br><span class="line"><span class="built_in">start</span> /B jupyter notebook --no-browser --notebook-<span class="built_in">dir</span> c:\Users\&#123;user_name&#125;\Documents :: 你的工作目录</span><br></pre></td></tr></table></figure>
-<p>改后缀名为 <code>.bat</code></p>
-<p>双击运行,结果发现还是会出现一个小黑框</p>
-<p>不开心 </p>
-<hr>
-<p>然后在当前目录下再建立一个txt文件,输入</p>
-<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">On</span> <span class="keyword">Error</span> <span class="keyword">Resume</span> <span class="keyword">Next</span></span><br><span class="line"><span class="keyword">Dim</span> oShell</span><br><span class="line"><span class="keyword">Set</span> oShell= WScript.<span class="built_in">CreateObject</span>(<span class="string">"WScript.Shell"</span>)</span><br><span class="line">a = oShell.Run (<span class="string">"Jupyter.bat"</span>,<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
-<p>改后缀名为<code>.vbs</code></p>
-<p>双击运行,什么都没有发生</p>
-<p>但是你可以访问本地的 <a href="http://localhost:8888" target="_blank" rel="noopener">jupyer notebook</a> 了</p>
-<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>最后当然是配置成可以开机启动啦。</p>
+<p>PS: XSI X/Open 系统接口(X/Open SystemInterface) </p>
+<h3 id="限制"><a href="#限制" class="headerlink" title="限制"></a>限制</h3><p>为了增强程序的可移植性, UNIX会存在一些幻术,和常量.相应的,也存在对这些实现的限制.限制可以分为两类:</p>
 <ol>
-<li>打开计划任务</li>
-<li><a href="https://zhuanlan.zhihu.com/p/33722601" target="_blank" rel="noopener">参照这个</a></li>
+<li>编译时限制  短整形的最大值</li>
+<li>运行时限制   文件名有多少个字符</li>
 </ol>
-<p>把 <code>http://loacalhost:8888</code>加入收藏夹</p>
-<p>之后就可以愉快的玩耍了. XD</p>
+<p>一些限制:</p>
+
+<table><tr><td>名称</td><td>描述</td><td>最小可接受值</td><td>典型值</td></tr><tr><td>NL_ARGMAX</td><td>printf和scanf调用数字的最大值</td><td>9</td><td>9</td></tr><tr><td>NL_LANGMAX</td><td>LANG环境变量的最大字节数</td><td>14</td><td>14</td></tr><tr><td>NL_MSGMAX</td><td>最大消息数量</td><td>32,767</td><td>32,767</td></tr><tr><td>NL_NMAX</td><td>多对一映射字符的最大字节数</td><td>未定义</td><td>1</td></tr><tr><td>NL_SETMAX</td><td>最大集合数量</td><td>255</td><td>255</td></tr><tr><td>NL_TEXTMAX</td><td>消息字符串的最大字节数</td><td>POSIX2_LINE_MAX</td><td>2,048</td></tr><tr><td>NZERO</td><td>默认的进程优先级</td><td>20</td><td>20</td></tr><tr><td>XOPEN_IOV_MAX</td><td>readv和writev使用的iovec结构的最大数量</td><td>16</td><td>16</td></tr><tr><td>XOPEN_NAME_MAX</td><td>文件名的最大字节数</td><td>255</td><td>255</td></tr><tr><td>XOPEN_PATH_MAX</td><td>路径名的最大字节数</td><td>1,024</td><td>1,024</td></tr></table>
+
+
+
+<p>ISO C 限制</p>
+<p>后续还有些限制, 因为精力有限 且又因发现了一个比较好的博客, 读者具体可以参照这个博客.</p>
+<p>参考博客:</p>
+<p><a href="https://blog.csdn.net/wtfmonking/article/details/14224229" target="_blank" rel="noopener">UNIX标准化及实现</a></p>
+<h3 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h3><p>一些常用的数据类型</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>clock_t</td>
+<td>时钟滴答计数器（进程时间）</td>
+</tr>
+<tr>
+<td>comp_t</td>
+<td>压缩的时钟滴答</td>
+</tr>
+<tr>
+<td>dev_t</td>
+<td>设备号</td>
+</tr>
+<tr>
+<td>fd_set</td>
+<td>文件描述符集</td>
+</tr>
+<tr>
+<td>fpos_t</td>
+<td>文件位置</td>
+</tr>
+<tr>
+<td>gid_t</td>
+<td>数组值ID</td>
+</tr>
+<tr>
+<td>ino_t</td>
+<td>i节点编号</td>
+</tr>
+<tr>
+<td>mode_t</td>
+<td>文件类型，文件创建模式</td>
+</tr>
+<tr>
+<td>nlink_t</td>
+<td>目录项的链接计数</td>
+</tr>
+<tr>
+<td>off_t</td>
+<td>文件长度和偏移量（带符号的）</td>
+</tr>
+<tr>
+<td>pid_t</td>
+<td>进程ID和进程组ID（带符号的）</td>
+</tr>
+<tr>
+<td>pthread_t</td>
+<td>线程ID</td>
+</tr>
+<tr>
+<td>ptrdiff_t</td>
+<td>两个指针相减的结果（带符号的）</td>
+</tr>
+<tr>
+<td>rlim_t</td>
+<td>资源限制</td>
+</tr>
+<tr>
+<td>sig_atomic_t</td>
+<td>能原子性的访问的数据类型</td>
+</tr>
+<tr>
+<td>sigset_t</td>
+<td>信号集</td>
+</tr>
+<tr>
+<td>size_t</td>
+<td>对象（如字符串）长度（不带符号的）</td>
+</tr>
+<tr>
+<td>ssize_t</td>
+<td>返回字节计数的函数（带符号的）</td>
+</tr>
+<tr>
+<td>time_t</td>
+<td>日历时间的秒计数器</td>
+</tr>
+<tr>
+<td>uid_t</td>
+<td>数值用户ID</td>
+</tr>
+<tr>
+<td>wchar_t</td>
+<td>能表示不同的字符码</td>
+</tr>
+</tbody>
+</table>
 
       
     </div>
@@ -405,7 +733,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>Post link:</strong>
-    <a href="http://toads.github.io/2018/12/11/在window上配置一个开机自启的jupyter-notebook/" title="在window上配置一个开机自启的jupyter_notebook">http://toads.github.io/2018/12/11/在window上配置一个开机自启的jupyter-notebook/</a>
+    <a href="http://toads.github.io/2019/05/03/UNIX环境高级编程读书笔记-二/" title="UNIX环境高级编程读书笔记-二">http://toads.github.io/2019/05/03/UNIX环境高级编程读书笔记-二/</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice: </strong>
@@ -420,9 +748,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/python/" rel="tag"># python</a>
-          
-            <a href="/tags/jupyter-notebook/" rel="tag"># jupyter notebook</a>
+            <a href="/tags/unix/" rel="tag"># unix</a>
           
         </div>
       
@@ -435,8 +761,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/12/10/搭建一个jupyter网站/" rel="next" title="搭建一个jupyter网站">
-                <i class="fa fa-chevron-left"></i> 搭建一个jupyter网站
+              <a href="/2019/05/03/UNIX环境高级编程读书笔记-二UNIX环境高级编程读书笔记-二/" rel="next" title="UNIX环境高级编程读书笔记-二UNIX环境高级编程读书笔记-二">
+                <i class="fa fa-chevron-left"></i> UNIX环境高级编程读书笔记-二UNIX环境高级编程读书笔记-二
               </a>
             
           </div>
@@ -444,10 +770,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/12/11/hello-world/" rel="prev" title="Hello World">
-                Hello World <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -590,7 +912,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置"><span class="nav-number">1.</span> <span class="nav-text">配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最后"><span class="nav-number">2.</span> <span class="nav-text">最后</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#UNIX-标准及实现"><span class="nav-number">1.</span> <span class="nav-text">UNIX 标准及实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#UNIX-标准化过程"><span class="nav-number">1.1.</span> <span class="nav-text">UNIX 标准化过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ISO-C-标准定义的头文件"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">ISO C  标准定义的头文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#POSIX-标准定义的必需头文件"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">POSIX 标准定义的必需头文件</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#限制"><span class="nav-number">1.1.1.</span> <span class="nav-text">限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基本数据类型"><span class="nav-number">1.1.2.</span> <span class="nav-text">基本数据类型</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -770,9 +1092,9 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'http://toads.github.io/2018/12/11/在window上配置一个开机自启的jupyter-notebook/';
-          this.page.identifier = '2018/12/11/在window上配置一个开机自启的jupyter-notebook/';
-          this.page.title = '在window上配置一个开机自启的jupyter_notebook';
+          this.page.url = 'http://toads.github.io/2019/05/03/UNIX环境高级编程读书笔记-二/';
+          this.page.identifier = '2019/05/03/UNIX环境高级编程读书笔记-二/';
+          this.page.title = 'UNIX环境高级编程读书笔记-二';
         };
         var d = document, s = d.createElement('script');
         s.src = 'https://toads.disqus.com/embed.js';
