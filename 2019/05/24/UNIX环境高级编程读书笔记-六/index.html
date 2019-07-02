@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="jupyter,web,">
+  <meta name="keywords" content="toads's blog">
 
 
 
@@ -79,18 +79,14 @@
 
 
 
-<meta name="description" content="本文主要介绍如何做一个Jupyter notebook 后台">
-<meta name="keywords" content="jupyter,web">
 <meta property="og:type" content="article">
-<meta property="og:title" content="搭建一个jupyter网站">
-<meta property="og:url" content="http://toads.github.io/2018/12/10/搭建一个jupyter网站/index.html">
+<meta property="og:title" content="UNIX环境高级编程读书笔记-六">
+<meta property="og:url" content="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-六/index.html">
 <meta property="og:site_name" content="toads&#39;s blog">
-<meta property="og:description" content="本文主要介绍如何做一个Jupyter notebook 后台">
 <meta property="og:locale" content="zh_Hans">
-<meta property="og:updated_time" content="2018-12-10T01:57:21.016Z">
+<meta property="og:updated_time" content="2019-05-24T07:09:32.957Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="搭建一个jupyter网站">
-<meta name="twitter:description" content="本文主要介绍如何做一个Jupyter notebook 后台">
+<meta name="twitter:title" content="UNIX环境高级编程读书笔记-六">
 
 
 
@@ -120,13 +116,13 @@
 
 
 
-  <link rel="canonical" href="http://toads.github.io/2018/12/10/搭建一个jupyter网站/">
+  <link rel="canonical" href="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-六/">
 
 
 
 
 
-  <title>搭建一个jupyter网站 | toads's blog</title>
+  <title>UNIX环境高级编程读书笔记-六 | toads's blog</title>
   
 
 
@@ -272,7 +268,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2018/12/10/搭建一个jupyter网站/">
+    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-六/">
 
     <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
       <meta itemprop="name" content="toads">
@@ -289,7 +285,7 @@
 
         
         
-          <h2 class="post-title" itemprop="name headline">搭建一个jupyter网站</h2>
+          <h2 class="post-title" itemprop="name headline">UNIX环境高级编程读书笔记-六</h2>
         
 
         <div class="post-meta">
@@ -301,8 +297,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-12-10T09:53:57+08:00">
-                2018-12-10
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-05-24T15:09:32+08:00">
+                2019-05-24
               </time>
             
 
@@ -320,8 +316,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2018/12/10/搭建一个jupyter网站/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/12/10/搭建一个jupyter网站/" itemprop="commentCount"></span>
+                <a href="/2019/05/24/UNIX环境高级编程读书笔记-六/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/24/UNIX环境高级编程读书笔记-六/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -349,28 +345,7 @@
       
 
       
-        <p>本文主要介绍如何做一个Jupyter notebook 后台</p>
-<a id="more"></a>
-<h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><h3 id="购买服务器"><a href="#购买服务器" class="headerlink" title="购买服务器"></a>购买服务器</h3><ol>
-<li>买一个服务器 我用的是 Digitalocean (新加坡的) 顺便用于科学上网，邀请链接冲 <strong>5刀送10刀</strong> 按下不表</li>
-<li>装系统 我用 Ubuntu</li>
-<li>服务器配置 按下不表 <h3 id="软件配置"><a href="#软件配置" class="headerlink" title="软件配置"></a>软件配置</h3></li>
-<li>安装虚拟环境</li>
-<li>安装 Nginx</li>
-<li>安装 Jupyter Notebook</li>
-</ol>
-<hr>
-<h2 id="开干"><a href="#开干" class="headerlink" title="开干"></a>开干</h2><h3 id="配置-SSL"><a href="#配置-SSL" class="headerlink" title="配置 SSL"></a>配置 SSL</h3><blockquote>
-<p><a href="https://foofish.net/https-free-for-lets-encrypt.html" target="_blank" rel="noopener">https://foofish.net/https-free-for-lets-encrypt.html</a></p>
-</blockquote>
-<h3 id="配置-Jupyter"><a href="#配置-Jupyter" class="headerlink" title="配置 Jupyter"></a>配置 Jupyter</h3><blockquote>
-<p>sudo apt install python-pip</p>
-<p>pip install notebook jupyter</p>
-</blockquote>
-<h3 id="配置-Nginx"><a href="#配置-Nginx" class="headerlink" title="配置 Nginx"></a>配置 Nginx</h3><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">server_name</span> yousite.com; <span class="comment"># 服务器域名和 IP 地址</span></span><br><span class="line"><span class="comment">#	listen 80;</span></span><br><span class="line">    <span class="attribute">listen</span> [::]:<span class="number">443</span>;</span><br><span class="line">    <span class="attribute">listen</span> <span class="number">443</span>;</span><br><span class="line">    <span class="attribute">ssl</span> <span class="literal">on</span>;  </span><br><span class="line">	<span class="attribute">ssl_certificate</span> /etc/letsencrypt/live/yoursite.com/fullchain.pem;</span><br><span class="line">	<span class="attribute">ssl_certificate_key</span> /etc/letsencrypt/live/yoursite.com/privkey.pem;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">ssl_session_timeout</span> <span class="number">5m</span>; </span><br><span class="line">    <span class="attribute">ssl_protocols</span> TLSv1 TLSv1.<span class="number">1</span> TLSv1.<span class="number">2</span>;</span><br><span class="line">    <span class="attribute">ssl_ciphers</span> ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;</span><br><span class="line">    <span class="attribute">ssl_prefer_server_ciphers</span> <span class="literal">on</span>; </span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">        <span class="attribute">proxy_pass</span> https://localhost:8888;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Forwarded-For <span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> X-Real-IP <span class="variable">$remote_addr</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Host <span class="variable">$http_host</span>;</span><br><span class="line">        <span class="attribute">proxy_http_version</span> <span class="number">1</span>.<span class="number">1</span>;</span><br><span class="line">        <span class="attribute">proxy_redirect</span> <span class="literal">off</span>;</span><br><span class="line">        <span class="attribute">proxy_buffering</span> <span class="literal">off</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Upgrade <span class="variable">$http_upgrade</span>;</span><br><span class="line">        <span class="attribute">proxy_set_header</span> Connection <span class="string">"upgrade"</span>;</span><br><span class="line">        <span class="attribute">proxy_read_timeout</span> <span class="number">86400</span>;</span><br><span class="line">        <span class="attribute">access_log</span> <span class="literal">on</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>配置中还有不少的坑，以后有时间，慢慢说。</p>
-
+        
       
     </div>
     
@@ -390,7 +365,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>Post link:</strong>
-    <a href="http://toads.github.io/2018/12/10/搭建一个jupyter网站/" title="搭建一个jupyter网站">http://toads.github.io/2018/12/10/搭建一个jupyter网站/</a>
+    <a href="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-六/" title="UNIX环境高级编程读书笔记-六">http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-六/</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice: </strong>
@@ -403,14 +378,6 @@
 
     <footer class="post-footer">
       
-        <div class="post-tags">
-          
-            <a href="/tags/jupyter/" rel="tag"># jupyter</a>
-          
-            <a href="/tags/web/" rel="tag"># web</a>
-          
-        </div>
-      
 
       
       
@@ -420,14 +387,18 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2019/05/24/UNIX环境高级编程读书笔记-五/" rel="next" title="UNIX环境高级编程读书笔记-五">
+                <i class="fa fa-chevron-left"></i> UNIX环境高级编程读书笔记-五
+              </a>
+            
           </div>
 
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/12/11/在window上配置一个开机自启的jupyter-notebook/" rel="prev" title="在window上配置一个开机自启的jupyter_notebook">
-                在window上配置一个开机自启的jupyter_notebook <i class="fa fa-chevron-right"></i>
+              <a href="/2019/05/24/UNIX环境高级编程读书笔记-七/" rel="prev" title="UNIX环境高级编程读书笔记-七">
+                UNIX环境高级编程读书笔记-七 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -490,17 +461,8 @@
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            Table of Contents
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            Overview
-          </li>
-        </ul>
-      
 
-      <section class="site-overview-wrap sidebar-panel">
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
             
@@ -561,22 +523,6 @@
         </div>
       </section>
 
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#准备"><span class="nav-number">1.</span> <span class="nav-text">准备</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#购买服务器"><span class="nav-number">1.1.</span> <span class="nav-text">购买服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#软件配置"><span class="nav-number">1.2.</span> <span class="nav-text">软件配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开干"><span class="nav-number">2.</span> <span class="nav-text">开干</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置-SSL"><span class="nav-number">2.1.</span> <span class="nav-text">配置 SSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置-Jupyter"><span class="nav-number">2.2.</span> <span class="nav-text">配置 Jupyter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置-Nginx"><span class="nav-number">2.3.</span> <span class="nav-text">配置 Nginx</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
-            
-
-          </div>
-        </section>
-      <!--/noindex-->
       
 
       
@@ -751,9 +697,9 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'http://toads.github.io/2018/12/10/搭建一个jupyter网站/';
-          this.page.identifier = '2018/12/10/搭建一个jupyter网站/';
-          this.page.title = '搭建一个jupyter网站';
+          this.page.url = 'http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-六/';
+          this.page.identifier = '2019/05/24/UNIX环境高级编程读书笔记-六/';
+          this.page.title = 'UNIX环境高级编程读书笔记-六';
         };
         var d = document, s = d.createElement('script');
         s.src = 'https://toads.disqus.com/embed.js';

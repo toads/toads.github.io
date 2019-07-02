@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh_Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="unix,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本章主要介绍进程的环境 函数执行时, main函数是如何被调用的,命令行参数是如何传递给新程序, 典型的存储空间布局, 如何分配额外的存储空间, 进程如何使用环境变量, 进程的各种不同的终止方式, 另外学习 longjump和setjump和栈的交互.">
+<meta name="keywords" content="unix">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UNIX环境高级编程读书笔记-七">
+<meta property="og:url" content="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-七/index.html">
+<meta property="og:site_name" content="toads&#39;s blog">
+<meta property="og:description" content="本章主要介绍进程的环境 函数执行时, main函数是如何被调用的,命令行参数是如何传递给新程序, 典型的存储空间布局, 如何分配额外的存储空间, 进程如何使用环境变量, 进程的各种不同的终止方式, 另外学习 longjump和setjump和栈的交互.">
+<meta property="og:locale" content="zh_Hans">
+<meta property="og:updated_time" content="2019-07-02T07:51:39.723Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UNIX环境高级编程读书笔记-七">
+<meta name="twitter:description" content="本章主要介绍进程的环境 函数执行时, main函数是如何被调用的,命令行参数是如何传递给新程序, 典型的存储空间布局, 如何分配额外的存储空间, 进程如何使用环境变量, 进程的各种不同的终止方式, 另外学习 longjump和setjump和栈的交互.">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-七/">
+
+
+
+
+
+  <title>UNIX环境高级编程读书笔记-七 | toads's blog</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-116710997-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh_Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">toads's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-七/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="toads">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="toads's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">UNIX环境高级编程读书笔记-七</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-05-24T15:10:30+08:00">
+                2019-05-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/05/24/UNIX环境高级编程读书笔记-七/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/24/UNIX环境高级编程读书笔记-七/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本章主要介绍进程的环境</p>
+<p>函数执行时, main函数是如何被调用的,命令行参数是如何传递给新程序, 典型的存储空间布局, 如何分配额外的存储空间, 进程如何使用环境变量, 进程的各种不同的终止方式, 另外学习 <code>longjump</code>和<code>setjump</code>和栈的交互.</p>
+<a id="more"></a>
+<h1 id="进程环境"><a href="#进程环境" class="headerlink" title="进程环境"></a>进程环境</h1><p>本章主要介绍进程的环境</p>
+<p>函数执行时, main函数是如何被调用的,命令行参数是如何传递给新程序, 典型的存储空间布局, 如何分配额外的存储空间, 进程如何使用环境变量, 进程的各种不同的终止方式, 另外学习 <code>longjump</code>和<code>setjump</code>和栈的交互.</p>
+<h2 id="mian函数"><a href="#mian函数" class="headerlink" title="mian函数"></a>mian函数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> * argv[])</span></span>;</span><br></pre></td></tr></table></figure>
+<p>当内核执行C程序时, 使用一个<code>exec函数</code>, 在调用一个特殊的启动例程,后调用 main 函数. 可执行程序文件将此启动例程指定为程序的起始地址– 连接编辑器 设置的.</p>
+<p>启动例程从内核中获得命令行参数和环境变量. 然后按上述方式调用main函数</p>
+<h2 id="进程的终止"><a href="#进程的终止" class="headerlink" title="进程的终止"></a>进程的终止</h2><p>8种termination的方式.</p>
+<p>todo 图片</p>
+<h3 id="退出函数"><a href="#退出函数" class="headerlink" title="退出函数"></a>退出函数</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">exit</span><span class="params">(<span class="keyword">int</span> status)</span></span>; <span class="comment">// 执行关闭操作</span></span><br><span class="line"><span class="comment">// 直接退出</span></span><br><span class="line"><span class="keyword">void</span> _Exit(<span class="keyword">int</span> status);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="keyword">void</span> _exit(<span class="keyword">int</span> status);</span><br></pre></td></tr></table></figure>
+<h3 id="atexit-退出函数注册函数"><a href="#atexit-退出函数注册函数" class="headerlink" title="atexit 退出函数注册函数"></a>atexit 退出函数注册函数</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#inclde<span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">atexit</span><span class="params">(<span class="keyword">void</span> (*func)(<span class="keyword">void</span>))</span></span>;</span><br><span class="line"><span class="comment">//成功返回0, 失败返回非0</span></span><br></pre></td></tr></table></figure>
+<p>调用顺序与登记顺序相反</p>
+<p>最多32个</p>
+<p>如果缓冲区种还有数据, 调用exit,如果是行缓冲的数据,可能打印不出来, 就直接exit掉.</p>
+<p>stdout是行缓冲的, 记得\n</p>
+<h3 id="命令行参数"><a href="#命令行参数" class="headerlink" title="命令行参数"></a>命令行参数</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">argv</span><br><span class="line">argc</span><br></pre></td></tr></table></figure>
+<h3 id="环境表"><a href="#环境表" class="headerlink" title="环境表"></a>环境表</h3><p>环境指针, 环境字符串</p>
+<h2 id="C-程序的存储空间布局"><a href="#C-程序的存储空间布局" class="headerlink" title="C 程序的存储空间布局"></a>C 程序的存储空间布局</h2><p>正文</p>
+<p>初始化数据</p>
+<p><code>int maxcount = 1000;</code></p>
+<p>未初始化数据</p>
+<p><code>long sum[100];</code></p>
+<p>栈</p>
+<p>堆</p>
+<h3 id="size-命令"><a href="#size-命令" class="headerlink" title="size 命令"></a>size 命令</h3><p>报告</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  chap7 size /usr/bin/zsh</span><br><span class="line">   text    data     bss     dec     hex filename</span><br><span class="line"> 826202   29208   79464  934874   e43da /usr/bin/zsh</span><br></pre></td></tr></table></figure>
+<h3 id="共享库"><a href="#共享库" class="headerlink" title="共享库"></a>共享库</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">➜  chap7 gcc atexit_test.c -g -o o.atexit</span><br><span class="line">➜  chap7 gcc atexit_test.c -g -static -o s.o.atexit</span><br><span class="line">➜  chap7 size *.atexit</span><br><span class="line">   text    data     bss     dec     hex filename</span><br><span class="line">   1964     612       4    2580     a14 o.atexit</span><br><span class="line"> 660246   21020    6144  687410   a7d32 s.o.atexit</span><br></pre></td></tr></table></figure>
+<p>符号链接不影响上述段的大小,因为上述段在内存中</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">➜  chap7 gcc atexit_test.c  -o s.no.atexit</span><br><span class="line">➜  chap7 size *.atexit</span><br><span class="line">   text    data     bss     dec     hex filename</span><br><span class="line">   1964     612       4    2580     a14 o.atexit</span><br><span class="line">   1964     612       4    2580     a14 s.no.atexit</span><br><span class="line"> 660246   21020    6144  687410   a7d32 s.o.atexit</span><br></pre></td></tr></table></figure>
+<h3 id="存储空间的分配"><a href="#存储空间的分配" class="headerlink" title="存储空间的分配"></a>存储空间的分配</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">malloc</span><span class="params">(<span class="keyword">size_t</span> size)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">calloc</span><span class="params">(<span class="keyword">size_t</span> nobj, <span class="keyword">size_t</span> size)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">realloc</span><span class="params">(<span class="keyword">void</span> *ptr, size_ newsize)</span></span>;</span><br><span class="line"><span class="comment">// 成功返回非空指针</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">free</span><span class="params">(<span class="keyword">void</span> *ptr)</span></span>;</span><br></pre></td></tr></table></figure>
+<h4 id="malloc"><a href="#malloc" class="headerlink" title="malloc"></a>malloc</h4><p>返回的指针是适当对齐的</p>
+<h4 id="calloc"><a href="#calloc" class="headerlink" title="calloc"></a>calloc</h4><p>为指定数量指定长度的对象分配存储空间.</p>
+<h4 id="realloc"><a href="#realloc" class="headerlink" title="realloc"></a>realloc</h4><p>可能会移动分区.</p>
+<p><strong>记得<code>free</code></strong></p>
+<h3 id="环境变量"><a href="#环境变量" class="headerlink" title="环境变量"></a>环境变量</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">char</span> *<span class="title">getenv</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *name)</span></span>;</span><br><span class="line"><span class="comment">// 指向与name 关联的value的指针, 若未找到, 返回 NULL</span></span><br></pre></td></tr></table></figure>
+<p>用户可以改环境变量但是,只对自己有用.</p>
+<p>除非</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">putenv</span><span class="params">(<span class="keyword">char</span> *str)</span></span>;</span><br><span class="line"><span class="comment">// 函数的返回值,若成功则返回0,失败返回非零</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">setenv</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> * name. <span class="keyword">const</span> <span class="keyword">char</span> * value, <span class="keyword">int</span> rewrite)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">unsetenv</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *name)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>环境字符串存在与存储空间顶部, 栈之上..</p>
+<p>环境字符串修改起来很麻烦</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">➜  chap7 cat env.c</span><br><span class="line"><span class="comment">#include&lt;stdlib.h&gt;</span></span><br><span class="line"><span class="comment">#include&lt;stdio.h&gt;</span></span><br><span class="line"></span><br><span class="line">int <span class="function"><span class="title">main</span></span>()&#123;</span><br><span class="line">    char *pchar;</span><br><span class="line">    pchar = getenv(<span class="string">"HOME"</span>);</span><br><span class="line">    pchar [2] = <span class="string">'p'</span>;</span><br><span class="line"></span><br><span class="line">    pchar [11] = <span class="string">'o'</span>;</span><br><span class="line">    puts(getenv(<span class="string">"HOME"</span>));</span><br><span class="line">    <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br><span class="line">➜  chap7 ./o.env</span><br><span class="line">/hpme/toadsoPATH=/home/toads/.autojump/bin:/usr/<span class="built_in">local</span>/sbin:/usr/<span class="built_in">local</span>/bin:/usr/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl</span><br></pre></td></tr></table></figure>
+<h2 id="函数-setjmp和longjmp"><a href="#函数-setjmp和longjmp" class="headerlink" title="函数 setjmp和longjmp"></a>函数 setjmp和longjmp</h2><p><code>setjmp</code> 和 <code>longjmp</code> 可以跨越函数</p>
+<p>比较复杂, 挖坑,待填</p>
+<h2 id="函数-getrlimit-和-setrlimit"><a href="#函数-getrlimit-和-setrlimit" class="headerlink" title="函数 getrlimit 和 setrlimit"></a>函数 getrlimit 和 setrlimit</h2><h2 id="习题"><a href="#习题" class="headerlink" title="习题"></a>习题</h2><p>7.1</p>
+<p>如果未执行return或exit . 返回值未定义</p>
+<p>7.2</p>
+<p><code>stdout</code> 采用行缓冲, 在遇到<code>\n</code>或者强制 <code>fflush</code> 或者调用exit 正常退出的情况下, 会真正输出.</p>
+<p>7.3 ? longjump?</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:</strong>
+    toads
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-七/" title="UNIX环境高级编程读书笔记-七">http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-七/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>
+    All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> unless stating additionally.
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/unix/" rel="tag"># unix</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/24/UNIX环境高级编程读书笔记-六/" rel="next" title="UNIX环境高级编程读书笔记-六">
+                <i class="fa fa-chevron-left"></i> UNIX环境高级编程读书笔记-六
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/07/02/UNIX环境高级编程读书笔记-八/" rel="prev" title="UNIX环境高级编程读书笔记-八">
+                UNIX环境高级编程读书笔记-八 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">toads</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/toads" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#进程环境"><span class="nav-number">1.</span> <span class="nav-text">进程环境</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#mian函数"><span class="nav-number">1.1.</span> <span class="nav-text">mian函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进程的终止"><span class="nav-number">1.2.</span> <span class="nav-text">进程的终止</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#退出函数"><span class="nav-number">1.2.1.</span> <span class="nav-text">退出函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#atexit-退出函数注册函数"><span class="nav-number">1.2.2.</span> <span class="nav-text">atexit 退出函数注册函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#命令行参数"><span class="nav-number">1.2.3.</span> <span class="nav-text">命令行参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#环境表"><span class="nav-number">1.2.4.</span> <span class="nav-text">环境表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C-程序的存储空间布局"><span class="nav-number">1.3.</span> <span class="nav-text">C 程序的存储空间布局</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#size-命令"><span class="nav-number">1.3.1.</span> <span class="nav-text">size 命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#共享库"><span class="nav-number">1.3.2.</span> <span class="nav-text">共享库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#存储空间的分配"><span class="nav-number">1.3.3.</span> <span class="nav-text">存储空间的分配</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#malloc"><span class="nav-number">1.3.3.1.</span> <span class="nav-text">malloc</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#calloc"><span class="nav-number">1.3.3.2.</span> <span class="nav-text">calloc</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#realloc"><span class="nav-number">1.3.3.3.</span> <span class="nav-text">realloc</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#环境变量"><span class="nav-number">1.3.4.</span> <span class="nav-text">环境变量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#函数-setjmp和longjmp"><span class="nav-number">1.4.</span> <span class="nav-text">函数 setjmp和longjmp</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#函数-getrlimit-和-setrlimit"><span class="nav-number">1.5.</span> <span class="nav-text">函数 getrlimit 和 setrlimit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#习题"><span class="nav-number">1.6.</span> <span class="nav-text">习题</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 &mdash; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">toads</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a></div>
+
+
+
+
+
+  <script src="https://unpkg.com/mermaid@<%= theme.mermaid.version %>/dist/mermaid.min.js"></script>
+    <script>
+    if (window.mermaid) {
+              mermaid.initialize({theme: 'forest'});
+                  
+    }
+      </script>
+      
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://toads.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://toads.github.io/2019/05/24/UNIX环境高级编程读书笔记-七/';
+          this.page.identifier = '2019/05/24/UNIX环境高级编程读书笔记-七/';
+          this.page.title = 'UNIX环境高级编程读书笔记-七';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://toads.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?0c58a1486de42ac6cc1c59c7d98ae887"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh_Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="toads's blog">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文主要介绍了如何制作盲水印和关于信号的高频与低频部分的处理. 1%pylab inline Populating the interactive namespace from numpy and matplotlib 123import cv2from numpy.fft import *from PIL import Image 12345678910111213141516171819202">
+<meta property="og:type" content="article">
+<meta property="og:title" content="盲水印">
+<meta property="og:url" content="http://toads.github.io/2019/05/18/盲水印/index.html">
+<meta property="og:site_name" content="toads&#39;s blog">
+<meta property="og:description" content="本文主要介绍了如何制作盲水印和关于信号的高频与低频部分的处理. 1%pylab inline Populating the interactive namespace from numpy and matplotlib 123import cv2from numpy.fft import *from PIL import Image 12345678910111213141516171819202">
+<meta property="og:locale" content="zh_Hans">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_2_1.png">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_3_1.png">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_5_2.png">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_6_1.png">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_8_1.png">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_10_0.png">
+<meta property="og:image" content="http://toads.github.io/2019/05/18/盲水印/output_11_1.png">
+<meta property="og:updated_time" content="2019-05-18T05:04:35.620Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="盲水印">
+<meta name="twitter:description" content="本文主要介绍了如何制作盲水印和关于信号的高频与低频部分的处理. 1%pylab inline Populating the interactive namespace from numpy and matplotlib 123import cv2from numpy.fft import *from PIL import Image 12345678910111213141516171819202">
+<meta name="twitter:image" content="http://toads.github.io/2019/05/18/盲水印/output_2_1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://toads.github.io/2019/05/18/盲水印/">
+
+
+
+
+
+  <title>盲水印 | toads's blog</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-116710997-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh_Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">toads's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://toads.github.io/2019/05/18/盲水印/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="toads">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="toads's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">盲水印</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-05-18T13:04:35+08:00">
+                2019-05-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/05/18/盲水印/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/05/18/盲水印/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文主要介绍了如何制作盲水印和关于信号的高频与低频部分的处理.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">%pylab inline</span><br></pre></td></tr></table></figure>
+<pre><code>Populating the interactive namespace from numpy and matplotlib
+</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">from</span> numpy.fft <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> matplotlib <span class="keyword">import</span> pyplot <span class="keyword">as</span> plt</span><br><span class="line">n = <span class="number">10</span></span><br><span class="line"><span class="comment"># 读取图像</span></span><br><span class="line">img = cv2.imread(<span class="string">'./玛丽莲爱因斯坦.jpg'</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 傅立叶变换</span></span><br><span class="line">dft = cv2.dft(np.float32(img), flags = cv2.DFT_COMPLEX_OUTPUT)</span><br><span class="line">fshift = fftshift(dft)</span><br><span class="line"></span><br><span class="line"><span class="comment">######</span></span><br><span class="line"><span class="comment"># 高通</span></span><br><span class="line"><span class="comment">######</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置掩膜</span></span><br><span class="line">rows, cols = img.shape</span><br><span class="line">crow,ccol = int(rows/<span class="number">2</span>), int(cols/<span class="number">2</span>) <span class="comment"># 中心位置</span></span><br><span class="line">mask = np.zeros((rows, cols, <span class="number">2</span>), np.uint8)</span><br><span class="line">mask[crow-n:crow+n, ccol-n:ccol+n] = <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 掩膜图像和频谱图像乘积</span></span><br><span class="line">f = fshift * mask</span><br><span class="line"><span class="keyword">print</span> (f.shape, fshift.shape, mask.shape)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 傅里叶逆变换</span></span><br><span class="line">ishift = np.fft.ifftshift(f)</span><br><span class="line">iimg = cv2.idft(ishift)</span><br><span class="line">res = cv2.magnitude(iimg[:,:,<span class="number">0</span>], iimg[:,:,<span class="number">1</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment">######</span></span><br><span class="line"><span class="comment"># 低通</span></span><br><span class="line"><span class="comment">######</span></span><br><span class="line"></span><br><span class="line">n = <span class="number">2</span></span><br><span class="line"><span class="comment">#????</span></span><br><span class="line"><span class="comment"># img = cv.imread('./玛丽莲爱因斯坦.jpg', 0)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">f = np.fft.fft2(img)</span><br><span class="line">fshift = np.fft.fftshift(f)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">rows, cols = img.shape</span><br><span class="line">crow,ccol = int(rows/<span class="number">2</span>), int(cols/<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">fshift[crow-n:crow+n, ccol-n:ccol+n] = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ishift = np.fft.ifftshift(fshift)</span><br><span class="line">iimg = np.fft.ifft2(ishift)</span><br><span class="line">iimg = np.abs(iimg)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 原始图像 低通滤波器</span></span><br><span class="line">plt.subplot(<span class="number">131</span>), plt.imshow(img, <span class="string">'gray'</span>), plt.title(<span class="string">'Original Image'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">132</span>), plt.imshow(res, <span class="string">'gray'</span>), plt.title(<span class="string">'High pass filtering'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line"><span class="comment"># plt.show()</span></span><br><span class="line">plt.subplot(<span class="number">133</span>), plt.imshow(iimg, <span class="string">'gray'</span>), plt.title(<span class="string">'Low pass filtering'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.show()</span><br></pre></td></tr></table></figure>
+<pre><code>(392, 480, 2) (392, 480, 2) (392, 480, 2)
+</code></pre><p><img src="output_2_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">plt.imshow(img, <span class="string">'gray'</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>&lt;matplotlib.image.AxesImage at 0x7f395d62fd30&gt;
+</code></pre><p><img src="output_3_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">getcenter</span><span class="params">(img)</span>:</span></span><br><span class="line">    rows, cols = img.shape</span><br><span class="line">    <span class="keyword">return</span> int(rows/<span class="number">2</span>), int(cols/<span class="number">2</span>)</span><br><span class="line"><span class="keyword">import</span> cv2 <span class="keyword">as</span> cv</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">young = cv2.imread(<span class="string">'./小孩.jpg'</span>, <span class="number">0</span>)</span><br><span class="line">old = cv2.imread(<span class="string">'./老人.jpg'</span>,<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">ycrows, yccols = getcenter(young)</span><br><span class="line">ocrows, occols = getcenter(old)</span><br><span class="line"></span><br><span class="line">rows, cols = young.shape</span><br><span class="line"><span class="comment"># old = cv2.resize(old, (fyoung.shape))</span></span><br><span class="line"><span class="comment"># print(ycrows,yccols,ocrows,occols,rows)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># if not (ycrows == ocrows and yccols == occols):</span></span><br><span class="line"><span class="comment">#     cv.resize(old, (rows,cols))</span></span><br><span class="line">old = cv2.resize(old, (cols,rows))</span><br><span class="line">print(young.shape)</span><br><span class="line">print(old.shape)</span><br><span class="line"><span class="comment"># young = cv2.resize(young, (cols,rows))</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">dft = cv2.dft(np.float32(young), flags = cv2.DFT_COMPLEX_OUTPUT)</span><br><span class="line">fshift = fftshift(dft)</span><br><span class="line"></span><br><span class="line">n = <span class="number">8</span></span><br><span class="line"><span class="comment"># 设置掩膜</span></span><br><span class="line">rows, cols = young.shape</span><br><span class="line">crow,ccol = int(rows/<span class="number">2</span>), int(cols/<span class="number">2</span>) <span class="comment"># 中心位置</span></span><br><span class="line">mask = np.zeros((rows, cols, <span class="number">2</span>), np.uint8)</span><br><span class="line">mask[crow-n:crow+n, ccol-n:ccol+n] = <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 掩膜图像和频谱图像乘积</span></span><br><span class="line">f = fshift * mask</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># fyoungshift = fftshift(fold)</span></span><br><span class="line">fold = fft2(old)</span><br><span class="line">foldshift = fftshift(fold)</span><br><span class="line">foldshift[ycrows-n:ycrows+n, yccols-n:yccols+n] = <span class="number">0</span>+<span class="number">0j</span></span><br><span class="line">foldshift[ycrows,yccols]</span><br><span class="line">a = np.array([np.real(foldshift), np.imag(foldshift)])</span><br><span class="line"></span><br><span class="line">f[:,:,<span class="number">0</span>] = f[:,:,<span class="number">0</span>]+a[<span class="number">1</span>]</span><br><span class="line">f[:,:,<span class="number">1</span>] = f[:,:,<span class="number">1</span>]+a[<span class="number">0</span>]</span><br><span class="line"><span class="keyword">print</span> (f.shape, fshift.shape, mask.shape)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 傅里叶逆变换</span></span><br><span class="line">ishift = np.fft.ifftshift(f)</span><br><span class="line">iimg = cv2.idft(ishift)</span><br><span class="line">res1 = cv2.magnitude(iimg[:,:,<span class="number">0</span>], iimg[:,:,<span class="number">1</span>])</span><br><span class="line">plt.imshow(res1,<span class="string">'gray'</span>)</span><br><span class="line"><span class="comment"># plt.axes('off')</span></span><br></pre></td></tr></table></figure>
+<pre><code>(491, 368)
+(491, 368)
+(491, 368, 2) (491, 368, 2) (491, 368, 2)
+
+
+
+
+
+&lt;matplotlib.image.AxesImage at 0x7ff65fbd4518&gt;
+</code></pre><p><img src="output_5_2.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">plt.subplot(<span class="number">221</span>), plt.imshow(young, <span class="string">'gray'</span>), plt.title(<span class="string">'young'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line"></span><br><span class="line">plt.subplot(<span class="number">222</span>), plt.imshow(old, <span class="string">'gray'</span>), plt.title(<span class="string">'old'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line"></span><br><span class="line">plt.subplot(<span class="number">223</span>), plt.imshow(res, <span class="string">'gray'</span>), plt.title(<span class="string">'oy'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line"></span><br><span class="line">plt.subplot(<span class="number">224</span>), plt.imshow(res1, <span class="string">'gray'</span>), plt.title(<span class="string">'yo'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>(-0.5, 367.5, 490.5, -0.5)
+</code></pre><p><img src="output_6_1.png" alt="png"></p>
+<h3 id="加盲水印"><a href="#加盲水印" class="headerlink" title="加盲水印"></a>加盲水印</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">young = cv2.imread(<span class="string">'./小孩.jpg'</span>, <span class="number">0</span>)</span><br><span class="line">water = cv2.imread(<span class="string">'./水印.jpg'</span>,<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">water =  cv2.resize(water, (young.shape[<span class="number">1</span>]//<span class="number">3</span>,young.shape[<span class="number">0</span>]//<span class="number">3</span>))</span><br><span class="line">mwater = np.zeros(young.shape, np.uint8)</span><br><span class="line">mwater[<span class="number">0</span>:water.shape[<span class="number">0</span>],<span class="number">0</span>:water.shape[<span class="number">1</span>]] = water</span><br><span class="line">mwater[mwater.shape[<span class="number">0</span>]-water.shape[<span class="number">0</span>]:,mwater.shape[<span class="number">1</span>]- water.shape[<span class="number">1</span>]:] = water</span><br><span class="line">a = <span class="number">100</span></span><br><span class="line">fyoung = fftshift(fft2(young))</span><br><span class="line">ftyoung = fyoung + mwater *<span class="number">0.25</span></span><br><span class="line"><span class="comment"># fwater = fft2(mwater)</span></span><br><span class="line"></span><br><span class="line">fmix  = ftyoung</span><br><span class="line">imix = abs(ifft2(ifftshift(fmix)))</span><br><span class="line">kmix = ftyoung - fyoung </span><br><span class="line">plt.subplot(<span class="number">221</span>), plt.imshow(abs(imix), <span class="string">'gray'</span>), plt.title(<span class="string">'watered'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">222</span>), plt.imshow(abs(young), <span class="string">'gray'</span>), plt.title(<span class="string">'origan'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">223</span>), plt.imshow(abs(kmix), <span class="string">'gray'</span>), plt.title(<span class="string">'water'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>(-0.5, 367.5, 490.5, -0.5)
+</code></pre><p><img src="output_8_1.png" alt="png"></p>
+<h2 id="解水印"><a href="#解水印" class="headerlink" title="解水印"></a>解水印</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">old = cv2.imread(<span class="string">'./t.jpg'</span>,<span class="number">0</span>)</span><br><span class="line">new = cv2.imread(<span class="string">'e.jpeg'</span>,<span class="number">0</span>)</span><br><span class="line">fo = fft2(old[:,:])</span><br><span class="line">fs = fftshift(fo)</span><br><span class="line">cx, cy= old.shape</span><br><span class="line">n = cv2.resize(new,(cy,cx))</span><br><span class="line">fn = fft2(n[:,:])</span><br><span class="line">fsn = fftshift(fn)</span><br><span class="line">cx//=<span class="number">2</span></span><br><span class="line">cy//=<span class="number">2</span></span><br><span class="line">n=<span class="number">20</span></span><br><span class="line"><span class="comment"># np.where()</span></span><br><span class="line"><span class="comment"># fs[cx-n:cx+n,cy-n:cy+n]=0</span></span><br><span class="line"><span class="comment"># fs = fs*(abs(fs)&lt;10000000)</span></span><br><span class="line">m = fo - fn</span><br><span class="line">t = abs(ifft2((ifftshift(fs))))</span><br><span class="line">e = abs(ifft2((ifftshift(fs))))</span><br><span class="line">q = fs - fsn</span><br><span class="line">np_t = np.angle(fs)</span><br><span class="line">np_fsn = np.angle(fsn)</span><br><span class="line">kp = np_t - np_fsn</span><br><span class="line">q = q*(np.abs(q)&gt;<span class="number">1000</span>)</span><br><span class="line"><span class="comment"># plt.axes(rect_line1)</span></span><br><span class="line">plt.subplot(<span class="number">321</span>)</span><br><span class="line">plt.imshow(old,<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">322</span>)</span><br><span class="line">plt.imshow(new,<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">323</span>)</span><br><span class="line">plt.imshow(np.log(abs(fs)+<span class="number">1</span>),<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">324</span>)</span><br><span class="line">plt.imshow(np.log(abs((fn)+<span class="number">1</span>)),<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">325</span>)</span><br><span class="line">plt.imshow(abs(m),<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">326</span>)</span><br><span class="line"></span><br><span class="line">plt.imshow(abs(ifftshift(angle(q))),<span class="string">'gray'</span>)</span><br><span class="line"><span class="comment"># plt.plot(t)</span></span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line"></span><br><span class="line">plt.show()</span><br><span class="line"></span><br><span class="line"><span class="comment"># xx[:,:,i]=abs(m)</span></span><br></pre></td></tr></table></figure>
+<p><img src="output_10_0.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">plt.subplot(<span class="number">121</span>)</span><br><span class="line">plt.imshow(old,<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br><span class="line">plt.subplot(<span class="number">122</span>)</span><br><span class="line">plt.imshow(abs(ifftshift(angle(q))),<span class="string">'gray'</span>)</span><br><span class="line">plt.axis(<span class="string">'off'</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>(-0.5, 307.5, 230.5, -0.5)
+</code></pre><p><img src="output_11_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:</strong>
+    toads
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="http://toads.github.io/2019/05/18/盲水印/" title="盲水印">http://toads.github.io/2019/05/18/盲水印/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>
+    All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> unless stating additionally.
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/04/hello-world/" rel="next" title="Hello World">
+                <i class="fa fa-chevron-left"></i> Hello World
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">toads</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/toads" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#加盲水印"><span class="nav-number">1.</span> <span class="nav-text">加盲水印</span></a></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#解水印"><span class="nav-number"></span> <span class="nav-text">解水印</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 &mdash; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">toads</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a></div>
+
+
+
+
+
+  <script src="https://unpkg.com/mermaid@<%= theme.mermaid.version %>/dist/mermaid.min.js"></script>
+    <script>
+    if (window.mermaid) {
+              mermaid.initialize({theme: 'forest'});
+                  
+    }
+      </script>
+      
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://toads.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://toads.github.io/2019/05/18/盲水印/';
+          this.page.identifier = '2019/05/18/盲水印/';
+          this.page.title = '盲水印';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://toads.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?0c58a1486de42ac6cc1c59c7d98ae887"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
