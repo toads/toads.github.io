@@ -348,7 +348,6 @@
         let totalWritten = 0;
         let totalChunks = 0;
         let db = null;
-        let store = null;
         // 各存储方式的统计数据
         let storageStats = {
             indexeddb: { written: 0, chunks: 0, errors: 0 },
@@ -501,7 +500,11 @@
             try {
                 switch (storageType) {
                     case 'indexeddb':
-                        if (db && store) {
+                        if (db) {
+                            // 为每次写入创建新的事务
+                            const transaction = db.transaction(['test_data'], 'readwrite');
+                            const store = transaction.objectStore('test_data');
+                            
                             const dataObject = {
                                 id: chunkId,
                                 data: data,
@@ -518,14 +521,14 @@
                         
                     case 'localStorage':
                         const localStorageKey = `stress_test_${chunkId}`;
-                        // 对于大文件，使用分块编码避免内存问题
-                        const base64Data = await encodeToBase64(data);
+                        // 使用更安全的编码方法
+                        const base64Data = await safeEncodeToBase64(data);
                         localStorage.setItem(localStorageKey, base64Data);
                         break;
                         
                     case 'sessionStorage':
                         const sessionStorageKey = `stress_test_${chunkId}`;
-                        const sessionBase64Data = await encodeToBase64(data);
+                        const sessionBase64Data = await safeEncodeToBase64(data);
                         sessionStorage.setItem(sessionStorageKey, sessionBase64Data);
                         break;
                 }
@@ -541,23 +544,48 @@
             }
         }
         
-        // 分块编码为 Base64，避免大文件导致内存溢出
+        // 分块编码为 Base64，避免大文件导致内存溢出和调用栈溢出
         async function encodeToBase64(data) {
-            const chunkSize = 1024 * 1024; // 1MB 块
+            const chunkSize = 32 * 1024; // 32KB 块，进一步减少调用栈压力
             const uint8Array = new Uint8Array(data);
             let result = '';
             
             for (let i = 0; i < uint8Array.length; i += chunkSize) {
                 const chunk = uint8Array.slice(i, i + chunkSize);
-                result += btoa(String.fromCharCode(...chunk));
+                
+                // 使用更安全的方式转换，避免调用栈溢出
+                let chunkString = '';
+                for (let j = 0; j < chunk.length; j++) {
+                    chunkString += String.fromCharCode(chunk[j]);
+                }
+                result += btoa(chunkString);
                 
                 // 让出控制权，避免阻塞UI
-                if (i % (chunkSize * 10) === 0) {
+                if (i % (chunkSize * 5) === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
             }
             
             return result;
+        }
+        
+        // 更安全的 Base64 编码，使用 TextEncoder/TextDecoder
+        async function safeEncodeToBase64(data) {
+            try {
+                // 尝试使用现代浏览器的 TextEncoder
+                if (typeof TextEncoder !== 'undefined') {
+                    const uint8Array = new Uint8Array(data);
+                    const textDecoder = new TextDecoder('latin1');
+                    const text = textDecoder.decode(uint8Array);
+                    return btoa(text);
+                } else {
+                    // 回退到分块编码
+                    return await encodeToBase64(data);
+                }
+            } catch (error) {
+                // 如果现代方法失败，回退到分块编码
+                return await encodeToBase64(data);
+            }
         }
         
         // 执行写入测试
@@ -579,12 +607,6 @@
             
             addLog(`开始多存储写入测试 - 块大小: ${chunkSize / 1024 / 1024}MB, 目标大小: ${maxSize / 1024 / 1024}MB, 数据类型: ${dataType}`, 'info');
             addLog(`选中的存储方式: ${selectedStorages.map(s => getStorageDisplayName(s)).join(', ')}`, 'info');
-            
-            // 初始化 IndexedDB 如果选中
-            if (selectedStorages.includes('indexeddb')) {
-                const transaction = db.transaction(['test_data'], 'readwrite');
-                store = transaction.objectStore('test_data');
-            }
             
             while (totalWritten < maxSize && isTestRunning) {
                 try {
