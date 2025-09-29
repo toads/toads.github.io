@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剪贴板内容读取器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .clipboard-content {
+            background-color: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .info-text {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .copy-success {
+            background-color: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 剪贴板内容读取器</h1>
+        
+        <div id="status" class="status info">
+            正在尝试读取剪贴板内容...
+        </div>
+        
+        <div class="info-text">
+            <strong>使用说明：</strong><br>
+            • 页面加载时会自动尝试读取剪贴板内容<br>
+            • 如果读取失败，请点击"重新读取"按钮<br>
+            • 需要用户授权才能访问剪贴板内容<br>
+            • 支持文本、图片等多种格式的剪贴板内容
+        </div>
+        
+        <div class="controls">
+            <button onclick="readClipboard()">🔄 重新读取</button>
+            <button onclick="copyToClipboard()">📋 复制内容</button>
+            <button onclick="clearContent()">🗑️ 清空内容</button>
+        </div>
+        
+        <div id="clipboardContent" class="clipboard-content">
+            剪贴板内容将在这里显示...
+        </div>
+    </div>
+
+    <script>
+        let currentClipboardContent = '';
+        
+        // 页面加载时自动读取剪贴板
+        window.addEventListener('load', function() {
+            readClipboard();
+        });
+        
+        async function readClipboard() {
+            const statusDiv = document.getElementById('status');
+            const contentDiv = document.getElementById('clipboardContent');
+            
+            try {
+                // 检查浏览器是否支持剪贴板API
+                if (!navigator.clipboard) {
+                    throw new Error('您的浏览器不支持剪贴板API，请使用现代浏览器（Chrome 66+, Firefox 63+, Safari 13.1+）');
+                }
+                
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '正在读取剪贴板内容...';
+                
+                // 尝试读取剪贴板内容
+                const clipboardItems = await navigator.clipboard.read();
+                
+                if (clipboardItems.length === 0) {
+                    statusDiv.className = 'status info';
+                    statusDiv.textContent = '剪贴板为空';
+                    contentDiv.textContent = '剪贴板中没有内容';
+                    currentClipboardContent = '';
+                    return;
+                }
+                
+                let content = '';
+                let hasContent = false;
+                
+                // 处理剪贴板中的每个项目
+                for (const item of clipboardItems) {
+                    for (const type of item.types) {
+                        try {
+                            const blob = await item.getType(type);
+                            
+                            if (type.startsWith('text/')) {
+                                const text = await blob.text();
+                                content += `[${type}]\n${text}\n\n`;
+                                hasContent = true;
+                            } else if (type.startsWith('image/')) {
+                                content += `[${type}] - 图片数据 (${blob.size} 字节)\n`;
+                                hasContent = true;
+                            } else {
+                                content += `[${type}] - 二进制数据 (${blob.size} 字节)\n`;
+                                hasContent = true;
+                            }
+                        } catch (e) {
+                            console.warn(`无法读取类型 ${type}:`, e);
+                        }
+                    }
+                }
+                
+                if (hasContent) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ 剪贴板内容读取成功！';
+                    contentDiv.textContent = content;
+                    currentClipboardContent = content;
+                } else {
+                    statusDiv.className = 'status info';
+                    statusDiv.textContent = '剪贴板中没有可读取的内容';
+                    contentDiv.textContent = '无法读取剪贴板中的内容';
+                    currentClipboardContent = '';
+                }
+                
+            } catch (error) {
+                console.error('读取剪贴板失败:', error);
+                
+                let errorMessage = '读取剪贴板失败：';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += '用户拒绝了剪贴板访问权限。请点击"重新读取"按钮并允许访问剪贴板。';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += '剪贴板中没有内容。';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage += '当前环境不支持剪贴板API。';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                statusDiv.className = 'status error';
+                statusDiv.textContent = errorMessage;
+                contentDiv.textContent = '无法读取剪贴板内容';
+                currentClipboardContent = '';
+            }
+        }
+        
+        async function copyToClipboard() {
+            if (!currentClipboardContent) {
+                alert('没有内容可复制');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(currentClipboardContent);
+                
+                // 显示复制成功提示
+                const statusDiv = document.getElementById('status');
+                const originalText = statusDiv.textContent;
+                const originalClass = statusDiv.className;
+                
+                statusDiv.className = 'status copy-success';
+                statusDiv.textContent = '✅ 内容已复制到剪贴板！';
+                
+                setTimeout(() => {
+                    statusDiv.className = originalClass;
+                    statusDiv.textContent = originalText;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('复制失败:', error);
+                alert('复制失败：' + error.message);
+            }
+        }
+        
+        function clearContent() {
+            const contentDiv = document.getElementById('clipboardContent');
+            const statusDiv = document.getElementById('status');
+            
+            contentDiv.textContent = '内容已清空';
+            currentClipboardContent = '';
+            
+            statusDiv.className = 'status info';
+            statusDiv.textContent = '内容已清空，点击"重新读取"获取新的剪贴板内容';
+        }
+        
+        // 监听剪贴板变化（如果支持）
+        if (navigator.clipboard && navigator.clipboard.addEventListener) {
+            navigator.clipboard.addEventListener('clipboardchange', function() {
+                console.log('剪贴板内容发生变化');
+                // 可以在这里自动重新读取剪贴板
+                // readClipboard();
+            });
+        }
+    </script>
+</body>
+</html>
