@@ -286,9 +286,6 @@
                         <label style="font-weight: normal; font-size: 12px;">
                             <input type="checkbox" id="useSessionStorage" checked> sessionStorage
                         </label>
-                        <label style="font-weight: normal; font-size: 12px;">
-                            <input type="checkbox" id="useMemory" checked> 内存存储
-                        </label>
                     </div>
                 </div>
                 
@@ -352,14 +349,11 @@
         let totalChunks = 0;
         let db = null;
         let store = null;
-        let memoryStorage = new Map(); // 内存存储
-        
         // 各存储方式的统计数据
         let storageStats = {
             indexeddb: { written: 0, chunks: 0, errors: 0 },
             localStorage: { written: 0, chunks: 0, errors: 0 },
-            sessionStorage: { written: 0, chunks: 0, errors: 0 },
-            memory: { written: 0, chunks: 0, errors: 0 }
+            sessionStorage: { written: 0, chunks: 0, errors: 0 }
         };
         
         // 日志函数
@@ -416,8 +410,7 @@
             const names = {
                 'indexeddb': 'IndexedDB',
                 'localStorage': 'localStorage',
-                'sessionStorage': 'sessionStorage',
-                'memory': '内存存储'
+                'sessionStorage': 'sessionStorage'
             };
             return names[type] || type;
         }
@@ -441,23 +434,35 @@
             }
         }
         
-        // 生成测试数据
+        // 生成测试数据 - 使用流式生成避免内存溢出
         function generateTestData(size, dataType) {
             const buffer = new ArrayBuffer(size);
             const uint8Array = new Uint8Array(buffer);
             
             switch (dataType) {
                 case 'random':
-                    for (let i = 0; i < uint8Array.length; i++) {
-                        uint8Array[i] = Math.floor(Math.random() * 256);
+                    // 随机数据 - 分块生成避免阻塞
+                    const chunkSize = Math.min(1024 * 1024, size); // 1MB 块
+                    for (let offset = 0; offset < size; offset += chunkSize) {
+                        const currentChunkSize = Math.min(chunkSize, size - offset);
+                        for (let i = 0; i < currentChunkSize; i++) {
+                            uint8Array[offset + i] = Math.floor(Math.random() * 256);
+                        }
                     }
                     break;
                 case 'zeros':
-                    // 零数据，实际上不需要填充，ArrayBuffer 默认就是零
+                    // 零数据 - ArrayBuffer 默认就是零，不需要填充
+                    // 但为了确保，我们只填充一小部分作为标识
+                    uint8Array[0] = 0; // 标识为零数据
                     break;
                 case 'pattern':
-                    for (let i = 0; i < uint8Array.length; i++) {
-                        uint8Array[i] = i % 256;
+                    // 模式数据 - 分块生成
+                    const patternChunkSize = Math.min(1024 * 1024, size); // 1MB 块
+                    for (let offset = 0; offset < size; offset += patternChunkSize) {
+                        const currentChunkSize = Math.min(patternChunkSize, size - offset);
+                        for (let i = 0; i < currentChunkSize; i++) {
+                            uint8Array[offset + i] = (offset + i) % 256;
+                        }
                     }
                     break;
             }
@@ -513,18 +518,15 @@
                         
                     case 'localStorage':
                         const localStorageKey = `stress_test_${chunkId}`;
-                        const base64Data = btoa(String.fromCharCode(...new Uint8Array(data)));
+                        // 对于大文件，使用分块编码避免内存问题
+                        const base64Data = await encodeToBase64(data);
                         localStorage.setItem(localStorageKey, base64Data);
                         break;
                         
                     case 'sessionStorage':
                         const sessionStorageKey = `stress_test_${chunkId}`;
-                        const sessionBase64Data = btoa(String.fromCharCode(...new Uint8Array(data)));
+                        const sessionBase64Data = await encodeToBase64(data);
                         sessionStorage.setItem(sessionStorageKey, sessionBase64Data);
-                        break;
-                        
-                    case 'memory':
-                        memoryStorage.set(chunkId, data);
                         break;
                 }
                 
@@ -539,6 +541,25 @@
             }
         }
         
+        // 分块编码为 Base64，避免大文件导致内存溢出
+        async function encodeToBase64(data) {
+            const chunkSize = 1024 * 1024; // 1MB 块
+            const uint8Array = new Uint8Array(data);
+            let result = '';
+            
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                const chunk = uint8Array.slice(i, i + chunkSize);
+                result += btoa(String.fromCharCode(...chunk));
+                
+                // 让出控制权，避免阻塞UI
+                if (i % (chunkSize * 10) === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            }
+            
+            return result;
+        }
+        
         // 执行写入测试
         async function performWriteTest() {
             const chunkSize = parseInt(document.getElementById('chunkSize').value) * 1024 * 1024;
@@ -550,7 +571,6 @@
             if (document.getElementById('useIndexedDB').checked) selectedStorages.push('indexeddb');
             if (document.getElementById('useLocalStorage').checked) selectedStorages.push('localStorage');
             if (document.getElementById('useSessionStorage').checked) selectedStorages.push('sessionStorage');
-            if (document.getElementById('useMemory').checked) selectedStorages.push('memory');
             
             if (selectedStorages.length === 0) {
                 addLog('请至少选择一种存储方式', 'error');
@@ -690,12 +710,6 @@
                     addLog(`sessionStorage 清理完成 (${sessionStorageKeys.length} 项)`, 'success');
                 }
                 
-                // 清理内存存储
-                const memoryCount = memoryStorage.size;
-                memoryStorage.clear();
-                if (memoryCount > 0) {
-                    addLog(`内存存储清理完成 (${memoryCount} 项)`, 'success');
-                }
                 
                 addLog('所有存储数据清理完成', 'success');
                 
@@ -705,8 +719,7 @@
                 storageStats = {
                     indexeddb: { written: 0, chunks: 0, errors: 0 },
                     localStorage: { written: 0, chunks: 0, errors: 0 },
-                    sessionStorage: { written: 0, chunks: 0, errors: 0 },
-                    memory: { written: 0, chunks: 0, errors: 0 }
+                    sessionStorage: { written: 0, chunks: 0, errors: 0 }
                 };
                 
                 document.getElementById('totalWritten').textContent = '0 MB';
@@ -754,8 +767,6 @@
                 addLog('浏览器不支持 sessionStorage', 'warning');
             }
             
-            // 内存存储总是支持的
-            supportedStorages.push('内存存储');
             
             addLog(`支持的存储方式: ${supportedStorages.join(', ')}`, 'success');
             updateStorageInfo();
