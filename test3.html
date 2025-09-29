@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多存储方式压力测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .test-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .control-group input, .control-group select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-section {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .log-section {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-info {
+            color: #63b3ed;
+        }
+        
+        .log-success {
+            color: #68d391;
+        }
+        
+        .log-warning {
+            color: #f6e05e;
+        }
+        
+        .log-error {
+            color: #fc8181;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-pending {
+            background: #6c757d;
+        }
+        
+        .status-running {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-success {
+            background: #28a745;
+        }
+        
+        .status-error {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        
+        .warning-box h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💾 多存储方式压力测试</h1>
+        
+        <div class="warning-box">
+            <h4>⚠️ 重要提示</h4>
+            <p>此测试将向多种存储方式写入大量数据，可能会占用大量磁盘空间和内存。请确保有足够的存储空间，并在测试完成后及时清理数据。</p>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">
+                <span class="status-indicator status-pending" id="statusIndicator"></span>
+                多存储方式写入测试
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="chunkSize">块大小 (MB)</label>
+                    <input type="number" id="chunkSize" value="10" min="1" max="100">
+                </div>
+                
+                <div class="control-group">
+                    <label for="maxSize">目标大小 (MB)</label>
+                    <input type="number" id="maxSize" value="100" min="10" max="10000">
+                </div>
+                
+                <div class="control-group">
+                    <label for="dataType">数据类型</label>
+                    <select id="dataType">
+                        <option value="random">随机数据</option>
+                        <option value="zeros">零数据</option>
+                        <option value="pattern">模式数据</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="storageTypes">存储方式</label>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="font-weight: normal; font-size: 12px;">
+                            <input type="checkbox" id="useIndexedDB" checked> IndexedDB
+                        </label>
+                        <label style="font-weight: normal; font-size: 12px;">
+                            <input type="checkbox" id="useLocalStorage" checked> localStorage
+                        </label>
+                        <label style="font-weight: normal; font-size: 12px;">
+                            <input type="checkbox" id="useSessionStorage" checked> sessionStorage
+                        </label>
+                        <label style="font-weight: normal; font-size: 12px;">
+                            <input type="checkbox" id="useMemory" checked> 内存存储
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button onclick="startTest()" id="startBtn">🚀 开始测试</button>
+                    <button onclick="stopTest()" id="stopBtn" disabled>⏹️ 停止测试</button>
+                    <button onclick="clearData()" id="clearBtn">🗑️ 清理数据</button>
+                </div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">总写入</div>
+                    <div class="stat-value" id="totalWritten">0 MB</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">写入速度</div>
+                    <div class="stat-value" id="writeSpeed">0 MB/s</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">总块数</div>
+                    <div class="stat-value" id="totalChunks">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">耗时</div>
+                    <div class="stat-value" id="elapsedTime">0s</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">存储使用率</div>
+                    <div class="stat-value" id="storageUsage">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">存储配额</div>
+                    <div class="stat-value" id="storageQuota">0 MB</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h4 style="margin-bottom: 15px; color: #495057;">各存储方式统计</h4>
+                <div class="stats-grid" id="storageStats">
+                    <!-- 动态生成各存储方式的统计 -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-section" id="logSection">
+            <div class="log-entry log-info">准备开始 IndexedDB 写入测试...</div>
+        </div>
+    </div>
+
+    <script>
+        let isTestRunning = false;
+        let testStartTime = 0;
+        let totalWritten = 0;
+        let totalChunks = 0;
+        let db = null;
+        let store = null;
+        let memoryStorage = new Map(); // 内存存储
+        
+        // 各存储方式的统计数据
+        let storageStats = {
+            indexeddb: { written: 0, chunks: 0, errors: 0 },
+            localStorage: { written: 0, chunks: 0, errors: 0 },
+            sessionStorage: { written: 0, chunks: 0, errors: 0 },
+            memory: { written: 0, chunks: 0, errors: 0 }
+        };
+        
+        // 日志函数
+        function addLog(message, type = 'info') {
+            const logSection = document.getElementById('logSection');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logSection.appendChild(logEntry);
+            logSection.scrollTop = logSection.scrollHeight;
+        }
+        
+        // 更新状态指示器
+        function updateStatus(status) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = `status-indicator status-${status}`;
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            const elapsed = (Date.now() - testStartTime) / 1000;
+            const speed = totalWritten / 1024 / 1024 / elapsed;
+            
+            document.getElementById('totalWritten').textContent = `${Math.round(totalWritten / 1024 / 1024)} MB`;
+            document.getElementById('writeSpeed').textContent = `${speed.toFixed(2)} MB/s`;
+            document.getElementById('totalChunks').textContent = totalChunks.toString();
+            document.getElementById('elapsedTime').textContent = `${elapsed.toFixed(1)}s`;
+            
+            updateStorageStats();
+        }
+        
+        // 更新各存储方式的统计
+        function updateStorageStats() {
+            const storageStatsContainer = document.getElementById('storageStats');
+            storageStatsContainer.innerHTML = '';
+            
+            Object.keys(storageStats).forEach(storageType => {
+                const stats = storageStats[storageType];
+                const statCard = document.createElement('div');
+                statCard.className = 'stat-card';
+                statCard.innerHTML = `
+                    <div class="stat-label">${getStorageDisplayName(storageType)}</div>
+                    <div class="stat-value">${Math.round(stats.written / 1024 / 1024)} MB</div>
+                    <div style="font-size: 0.8em; color: #6c757d; margin-top: 5px;">
+                        块数: ${stats.chunks} | 错误: ${stats.errors}
+                    </div>
+                `;
+                storageStatsContainer.appendChild(statCard);
+            });
+        }
+        
+        // 获取存储方式显示名称
+        function getStorageDisplayName(type) {
+            const names = {
+                'indexeddb': 'IndexedDB',
+                'localStorage': 'localStorage',
+                'sessionStorage': 'sessionStorage',
+                'memory': '内存存储'
+            };
+            return names[type] || type;
+        }
+        
+        // 更新存储配额信息
+        async function updateStorageInfo() {
+            try {
+                if ('storage' in navigator && 'estimate' in navigator.storage) {
+                    const estimate = await navigator.storage.estimate();
+                    const usagePercent = (estimate.usage / estimate.quota) * 100;
+                    
+                    document.getElementById('storageUsage').textContent = `${usagePercent.toFixed(1)}%`;
+                    document.getElementById('storageQuota').textContent = `${Math.round(estimate.quota / 1024 / 1024)} MB`;
+                    
+                    if (usagePercent > 90) {
+                        addLog(`⚠️ 警告: 存储使用率超过90% (${usagePercent.toFixed(1)}%)`, 'warning');
+                    }
+                }
+            } catch (error) {
+                addLog(`无法获取存储配额信息: ${error.message}`, 'error');
+            }
+        }
+        
+        // 生成测试数据
+        function generateTestData(size, dataType) {
+            const buffer = new ArrayBuffer(size);
+            const uint8Array = new Uint8Array(buffer);
+            
+            switch (dataType) {
+                case 'random':
+                    for (let i = 0; i < uint8Array.length; i++) {
+                        uint8Array[i] = Math.floor(Math.random() * 256);
+                    }
+                    break;
+                case 'zeros':
+                    // 零数据，实际上不需要填充，ArrayBuffer 默认就是零
+                    break;
+                case 'pattern':
+                    for (let i = 0; i < uint8Array.length; i++) {
+                        uint8Array[i] = i % 256;
+                    }
+                    break;
+            }
+            
+            return buffer;
+        }
+        
+        // 初始化数据库
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('stress_test_db', 1);
+                
+                request.onerror = () => {
+                    addLog(`数据库打开失败: ${request.error}`, 'error');
+                    reject(request.error);
+                };
+                
+                request.onsuccess = () => {
+                    db = request.result;
+                    addLog('数据库初始化成功', 'success');
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('test_data')) {
+                        const store = db.createObjectStore('test_data', { keyPath: 'id' });
+                        addLog('数据表创建成功', 'success');
+                    }
+                };
+            });
+        }
+        
+        // 写入到指定存储方式
+        async function writeToStorage(storageType, data, chunkId) {
+            try {
+                switch (storageType) {
+                    case 'indexeddb':
+                        if (db && store) {
+                            const dataObject = {
+                                id: chunkId,
+                                data: data,
+                                timestamp: Date.now(),
+                                size: data.byteLength
+                            };
+                            await new Promise((resolve, reject) => {
+                                const request = store.add(dataObject);
+                                request.onsuccess = () => resolve();
+                                request.onerror = () => reject(request.error);
+                            });
+                        }
+                        break;
+                        
+                    case 'localStorage':
+                        const localStorageKey = `stress_test_${chunkId}`;
+                        const base64Data = btoa(String.fromCharCode(...new Uint8Array(data)));
+                        localStorage.setItem(localStorageKey, base64Data);
+                        break;
+                        
+                    case 'sessionStorage':
+                        const sessionStorageKey = `stress_test_${chunkId}`;
+                        const sessionBase64Data = btoa(String.fromCharCode(...new Uint8Array(data)));
+                        sessionStorage.setItem(sessionStorageKey, sessionBase64Data);
+                        break;
+                        
+                    case 'memory':
+                        memoryStorage.set(chunkId, data);
+                        break;
+                }
+                
+                storageStats[storageType].written += data.byteLength;
+                storageStats[storageType].chunks++;
+                return true;
+                
+            } catch (error) {
+                storageStats[storageType].errors++;
+                addLog(`${getStorageDisplayName(storageType)} 写入失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // 执行写入测试
+        async function performWriteTest() {
+            const chunkSize = parseInt(document.getElementById('chunkSize').value) * 1024 * 1024;
+            const maxSize = parseInt(document.getElementById('maxSize').value) * 1024 * 1024;
+            const dataType = document.getElementById('dataType').value;
+            
+            // 获取选中的存储方式
+            const selectedStorages = [];
+            if (document.getElementById('useIndexedDB').checked) selectedStorages.push('indexeddb');
+            if (document.getElementById('useLocalStorage').checked) selectedStorages.push('localStorage');
+            if (document.getElementById('useSessionStorage').checked) selectedStorages.push('sessionStorage');
+            if (document.getElementById('useMemory').checked) selectedStorages.push('memory');
+            
+            if (selectedStorages.length === 0) {
+                addLog('请至少选择一种存储方式', 'error');
+                return;
+            }
+            
+            addLog(`开始多存储写入测试 - 块大小: ${chunkSize / 1024 / 1024}MB, 目标大小: ${maxSize / 1024 / 1024}MB, 数据类型: ${dataType}`, 'info');
+            addLog(`选中的存储方式: ${selectedStorages.map(s => getStorageDisplayName(s)).join(', ')}`, 'info');
+            
+            // 初始化 IndexedDB 如果选中
+            if (selectedStorages.includes('indexeddb')) {
+                const transaction = db.transaction(['test_data'], 'readwrite');
+                store = transaction.objectStore('test_data');
+            }
+            
+            while (totalWritten < maxSize && isTestRunning) {
+                try {
+                    const chunkData = generateTestData(chunkSize, dataType);
+                    const chunkId = totalChunks;
+                    
+                    // 并行写入到所有选中的存储方式
+                    const writePromises = selectedStorages.map(storageType => 
+                        writeToStorage(storageType, chunkData, chunkId)
+                    );
+                    
+                    const results = await Promise.allSettled(writePromises);
+                    const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
+                    
+                    if (successCount > 0) {
+                        totalWritten += chunkSize;
+                        totalChunks++;
+                        
+                        // 更新进度条
+                        const progress = Math.min((totalWritten / maxSize) * 100, 100);
+                        document.getElementById('progressFill').style.width = progress + '%';
+                        document.getElementById('progressFill').textContent = `${Math.round(progress)}%`;
+                        
+                        // 更新统计信息
+                        updateStats();
+                        
+                        // 每写入10个块更新一次存储信息
+                        if (totalChunks % 10 === 0) {
+                            await updateStorageInfo();
+                        }
+                        
+                        addLog(`块 ${totalChunks} 写入完成 (${successCount}/${selectedStorages.length} 存储成功)`, 'info');
+                    } else {
+                        addLog(`块 ${totalChunks} 所有存储方式都写入失败`, 'error');
+                    }
+                    
+                    // 短暂延迟避免阻塞UI
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                    
+                } catch (error) {
+                    addLog(`写入块 ${totalChunks} 失败: ${error.message}`, 'error');
+                    break;
+                }
+            }
+            
+            if (isTestRunning) {
+                addLog(`测试完成! 总共写入 ${Math.round(totalWritten / 1024 / 1024)}MB 数据`, 'success');
+                updateStatus('success');
+            } else {
+                addLog(`测试被停止，已写入 ${Math.round(totalWritten / 1024 / 1024)}MB 数据`, 'warning');
+                updateStatus('pending');
+            }
+        }
+        
+        // 开始测试
+        async function startTest() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            testStartTime = Date.now();
+            totalWritten = 0;
+            chunkCount = 0;
+            
+            updateStatus('running');
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('clearBtn').disabled = true;
+            
+            addLog('正在初始化数据库...', 'info');
+            
+            try {
+                await initDatabase();
+                await performWriteTest();
+            } catch (error) {
+                addLog(`测试失败: ${error.message}`, 'error');
+                updateStatus('error');
+            } finally {
+                isTestRunning = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('clearBtn').disabled = false;
+            }
+        }
+        
+        // 停止测试
+        function stopTest() {
+            isTestRunning = false;
+            addLog('正在停止测试...', 'warning');
+        }
+        
+        // 清理数据
+        async function clearData() {
+            if (isTestRunning) {
+                addLog('请先停止测试再清理数据', 'warning');
+                return;
+            }
+            
+            try {
+                addLog('开始清理所有存储数据...', 'info');
+                
+                // 清理 IndexedDB
+                if (db) {
+                    db.close();
+                    const deleteRequest = indexedDB.deleteDatabase('stress_test_db');
+                    await new Promise((resolve, reject) => {
+                        deleteRequest.onsuccess = () => resolve();
+                        deleteRequest.onerror = () => reject(deleteRequest.error);
+                    });
+                    addLog('IndexedDB 数据清理完成', 'success');
+                }
+                
+                // 清理 localStorage
+                const localStorageKeys = Object.keys(localStorage).filter(key => key.startsWith('stress_test_'));
+                localStorageKeys.forEach(key => localStorage.removeItem(key));
+                if (localStorageKeys.length > 0) {
+                    addLog(`localStorage 清理完成 (${localStorageKeys.length} 项)`, 'success');
+                }
+                
+                // 清理 sessionStorage
+                const sessionStorageKeys = Object.keys(sessionStorage).filter(key => key.startsWith('stress_test_'));
+                sessionStorageKeys.forEach(key => sessionStorage.removeItem(key));
+                if (sessionStorageKeys.length > 0) {
+                    addLog(`sessionStorage 清理完成 (${sessionStorageKeys.length} 项)`, 'success');
+                }
+                
+                // 清理内存存储
+                const memoryCount = memoryStorage.size;
+                memoryStorage.clear();
+                if (memoryCount > 0) {
+                    addLog(`内存存储清理完成 (${memoryCount} 项)`, 'success');
+                }
+                
+                addLog('所有存储数据清理完成', 'success');
+                
+                // 重置统计信息
+                totalWritten = 0;
+                totalChunks = 0;
+                storageStats = {
+                    indexeddb: { written: 0, chunks: 0, errors: 0 },
+                    localStorage: { written: 0, chunks: 0, errors: 0 },
+                    sessionStorage: { written: 0, chunks: 0, errors: 0 },
+                    memory: { written: 0, chunks: 0, errors: 0 }
+                };
+                
+                document.getElementById('totalWritten').textContent = '0 MB';
+                document.getElementById('writeSpeed').textContent = '0 MB/s';
+                document.getElementById('totalChunks').textContent = '0';
+                document.getElementById('elapsedTime').textContent = '0s';
+                document.getElementById('progressFill').style.width = '0%';
+                document.getElementById('progressFill').textContent = '0%';
+                
+                updateStorageStats();
+                updateStatus('pending');
+                
+            } catch (error) {
+                addLog(`清理数据失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 页面加载时检查存储支持
+        window.addEventListener('load', function() {
+            addLog('正在检测存储支持...', 'info');
+            
+            let supportedStorages = [];
+            
+            // 检查 IndexedDB
+            if ('indexedDB' in window) {
+                supportedStorages.push('IndexedDB');
+            } else {
+                document.getElementById('useIndexedDB').disabled = true;
+                addLog('浏览器不支持 IndexedDB', 'warning');
+            }
+            
+            // 检查 localStorage
+            if (typeof Storage !== 'undefined' && localStorage) {
+                supportedStorages.push('localStorage');
+            } else {
+                document.getElementById('useLocalStorage').disabled = true;
+                addLog('浏览器不支持 localStorage', 'warning');
+            }
+            
+            // 检查 sessionStorage
+            if (typeof Storage !== 'undefined' && sessionStorage) {
+                supportedStorages.push('sessionStorage');
+            } else {
+                document.getElementById('useSessionStorage').disabled = true;
+                addLog('浏览器不支持 sessionStorage', 'warning');
+            }
+            
+            // 内存存储总是支持的
+            supportedStorages.push('内存存储');
+            
+            addLog(`支持的存储方式: ${supportedStorages.join(', ')}`, 'success');
+            updateStorageInfo();
+            updateStorageStats();
+        });
+    </script>
+</body>
+</html>
