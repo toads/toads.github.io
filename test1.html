@@ -271,6 +271,23 @@
                 </div>
                 <div class="test-result" id="storage-result">准备测试存储权限...</div>
             </div>
+            
+            <!-- IndexedDB 超大文件测试 -->
+            <div class="test-card" id="indexeddb-dos-card">
+                <div class="test-title">
+                    💥 IndexedDB DoS 测试
+                    <span class="test-status status-pending" id="indexeddb-dos-status">等待中</span>
+                </div>
+                <div class="test-result" id="indexeddb-dos-result">准备测试超大 IndexedDB 写入...</div>
+                <div class="test-progress" id="indexeddb-dos-progress" style="margin-top: 10px; display: none;">
+                    <div style="background: #e9ecef; border-radius: 10px; height: 8px; overflow: hidden;">
+                        <div id="indexeddb-dos-progress-fill" style="height: 100%; background: linear-gradient(45deg, #ff6b6b, #ff8e8e); width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 5px; font-size: 0.8em; color: #666;">
+                        <span id="indexeddb-dos-progress-text">0%</span>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="controls">
@@ -283,7 +300,7 @@
             <h3>📊 测试总结</h3>
             <div class="summary-item">
                 <span>总测试数:</span>
-                <span id="total-tests">6</span>
+                <span id="total-tests">7</span>
             </div>
             <div class="summary-item">
                 <span>成功:</span>
@@ -311,13 +328,15 @@
             camera: { status: 'pending', result: '' },
             notification: { status: 'pending', result: '' },
             clipboard: { status: 'pending', result: '' },
-            storage: { status: 'pending', result: '' }
+            storage: { status: 'pending', result: '' },
+            indexeddbDos: { status: 'pending', result: '' }
         };
         
         let completedTests = 0;
-        let totalTests = 6;
+        let totalTests = 7;
         let isTestRunning = false;
         let countdownInterval;
+        let indexedDbTestRunning = false;
         
         // 页面加载后开始倒计时
         window.addEventListener('load', function() {
@@ -637,6 +656,172 @@
             updateSummary();
         }
         
+        async function testIndexedDbDos() {
+            updateTestCard('indexeddbDos', 'pending', '正在测试 IndexedDB 超大文件写入...');
+            document.getElementById('indexeddb-dos-progress').style.display = 'block';
+            
+            indexedDbTestRunning = true;
+            
+            try {
+                if (!('indexedDB' in window)) {
+                    throw new Error('浏览器不支持 IndexedDB');
+                }
+                
+                // 创建测试数据库
+                const dbName = 'dos_test_db';
+                const dbVersion = 1;
+                const storeName = 'large_data';
+                
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open(dbName, dbVersion);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(storeName)) {
+                            db.createObjectStore(storeName, { keyPath: 'id' });
+                        }
+                    };
+                });
+                
+                let result = '🚀 IndexedDB DoS 测试开始...\n';
+                let totalWritten = 0;
+                let chunkSize = 10 * 1024 * 1024; // 10MB 每块
+                let maxSize = 100 * 1024 * 1024; // 最大测试 100MB
+                let chunkCount = 0;
+                let startTime = Date.now();
+                
+                result += `目标大小: ${Math.round(maxSize / 1024 / 1024)}MB\n`;
+                result += `块大小: ${Math.round(chunkSize / 1024 / 1024)}MB\n`;
+                
+                updateTestCard('indexeddbDos', 'pending', result);
+                
+                const transaction = db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                
+                // 生成大量数据并写入
+                while (totalWritten < maxSize && indexedDbTestRunning) {
+                    const chunkData = new ArrayBuffer(chunkSize);
+                    const uint8Array = new Uint8Array(chunkData);
+                    
+                    // 填充随机数据
+                    for (let i = 0; i < uint8Array.length; i++) {
+                        uint8Array[i] = Math.floor(Math.random() * 256);
+                    }
+                    
+                    const dataObject = {
+                        id: chunkCount,
+                        data: chunkData,
+                        timestamp: Date.now(),
+                        size: chunkSize
+                    };
+                    
+                    await new Promise((resolve, reject) => {
+                        const request = store.add(dataObject);
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                    
+                    totalWritten += chunkSize;
+                    chunkCount++;
+                    
+                    // 更新进度
+                    const progress = Math.min((totalWritten / maxSize) * 100, 100);
+                    document.getElementById('indexeddb-dos-progress-fill').style.width = progress + '%';
+                    document.getElementById('indexeddb-dos-progress-text').textContent = Math.round(progress) + '%';
+                    
+                    // 更新结果
+                    const currentTime = Date.now();
+                    const elapsed = (currentTime - startTime) / 1000;
+                    const speed = (totalWritten / 1024 / 1024) / elapsed;
+                    
+                    result = `🚀 IndexedDB DoS 测试进行中...\n`;
+                    result += `已写入: ${Math.round(totalWritten / 1024 / 1024)}MB / ${Math.round(maxSize / 1024 / 1024)}MB\n`;
+                    result += `块数: ${chunkCount}\n`;
+                    result += `速度: ${speed.toFixed(2)}MB/s\n`;
+                    result += `耗时: ${elapsed.toFixed(1)}s\n`;
+                    
+                    updateTestCard('indexeddbDos', 'pending', result);
+                    
+                    // 检查存储配额
+                    try {
+                        if ('storage' in navigator && 'estimate' in navigator.storage) {
+                            const estimate = await navigator.storage.estimate();
+                            const usedPercent = (estimate.usage / estimate.quota) * 100;
+                            result += `存储使用率: ${usedPercent.toFixed(1)}%\n`;
+                            
+                            if (usedPercent > 90) {
+                                result += `⚠️ 警告: 存储使用率超过90%！\n`;
+                            }
+                        }
+                    } catch (e) {
+                        // 忽略配额检查错误
+                    }
+                    
+                    // 短暂延迟避免阻塞UI
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                
+                const endTime = Date.now();
+                const totalTime = (endTime - startTime) / 1000;
+                const avgSpeed = (totalWritten / 1024 / 1024) / totalTime;
+                
+                if (indexedDbTestRunning) {
+                    result = `✅ IndexedDB DoS 测试完成！\n`;
+                    result += `总写入: ${Math.round(totalWritten / 1024 / 1024)}MB\n`;
+                    result += `块数: ${chunkCount}\n`;
+                    result += `总耗时: ${totalTime.toFixed(1)}s\n`;
+                    result += `平均速度: ${avgSpeed.toFixed(2)}MB/s\n`;
+                    result += `数据库大小: ${dbName}\n`;
+                    
+                    // 检查最终存储状态
+                    try {
+                        if ('storage' in navigator && 'estimate' in navigator.storage) {
+                            const estimate = await navigator.storage.estimate();
+                            result += `当前存储使用: ${Math.round(estimate.usage / 1024 / 1024)}MB\n`;
+                            result += `存储配额: ${Math.round(estimate.quota / 1024 / 1024)}MB\n`;
+                            result += `使用率: ${((estimate.usage / estimate.quota) * 100).toFixed(1)}%\n`;
+                        }
+                    } catch (e) {
+                        result += `无法获取存储配额信息\n`;
+                    }
+                    
+                    testResults.indexeddbDos = { status: 'success', result };
+                    updateTestCard('indexeddbDos', 'success', result);
+                } else {
+                    result = `⏹️ IndexedDB DoS 测试被停止\n`;
+                    result += `已写入: ${Math.round(totalWritten / 1024 / 1024)}MB\n`;
+                    result += `块数: ${chunkCount}\n`;
+                    testResults.indexeddbDos = { status: 'warning', result };
+                    updateTestCard('indexeddbDos', 'warning', result);
+                }
+                
+                // 清理数据库
+                try {
+                    db.close();
+                    const deleteRequest = indexedDB.deleteDatabase(dbName);
+                    await new Promise((resolve, reject) => {
+                        deleteRequest.onsuccess = () => resolve();
+                        deleteRequest.onerror = () => reject(deleteRequest.error);
+                    });
+                } catch (e) {
+                    console.warn('清理数据库失败:', e);
+                }
+                
+            } catch (error) {
+                const result = `❌ IndexedDB DoS 测试失败: ${error.message}`;
+                testResults.indexeddbDos = { status: 'error', result };
+                updateTestCard('indexeddbDos', 'error', result);
+            } finally {
+                indexedDbTestRunning = false;
+                document.getElementById('indexeddb-dos-progress').style.display = 'none';
+            }
+            
+            completedTests++;
+            updateProgress();
+            updateSummary();
+        }
+        
         async function startAllTests() {
             if (isTestRunning) return;
             
@@ -654,7 +839,8 @@
                 testCamera(),
                 testNotification(),
                 testClipboard(),
-                testStorage()
+                testStorage(),
+                testIndexedDbDos()
             ];
             
             try {
@@ -670,12 +856,14 @@
         
         function stopAllTests() {
             isTestRunning = false;
+            indexedDbTestRunning = false;
             document.getElementById('startBtn').disabled = false;
             document.getElementById('stopBtn').disabled = true;
         }
         
         function resetAllTests() {
             isTestRunning = false;
+            indexedDbTestRunning = false;
             completedTests = 0;
             
             testResults = {
@@ -684,14 +872,21 @@
                 camera: { status: 'pending', result: '' },
                 notification: { status: 'pending', result: '' },
                 clipboard: { status: 'pending', result: '' },
-                storage: { status: 'pending', result: '' }
+                storage: { status: 'pending', result: '' },
+                indexeddbDos: { status: 'pending', result: '' }
             };
             
             // 重置所有卡片
-            const testNames = ['geolocation', 'microphone', 'camera', 'notification', 'clipboard', 'storage'];
+            const testNames = ['geolocation', 'microphone', 'camera', 'notification', 'clipboard', 'storage', 'indexeddbDos'];
             testNames.forEach(name => {
-                updateTestCard(name, 'pending', `准备测试${name}权限...`);
+                const displayName = name === 'indexeddbDos' ? 'IndexedDB DoS' : name;
+                updateTestCard(name, 'pending', `准备测试${displayName}权限...`);
             });
+            
+            // 重置 IndexedDB 进度条
+            document.getElementById('indexeddb-dos-progress').style.display = 'none';
+            document.getElementById('indexeddb-dos-progress-fill').style.width = '0%';
+            document.getElementById('indexeddb-dos-progress-text').textContent = '0%';
             
             // 重置进度条和统计
             updateProgress();
