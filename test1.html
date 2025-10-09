@@ -370,6 +370,16 @@
         let countdownInterval;
         const activeSensors = [];
         const activeListeners = [];
+        const lastUpdateAt = {};
+
+        function shouldUpdate(key, intervalMs = 200) {
+            const now = Date.now();
+            if (!lastUpdateAt[key] || now - lastUpdateAt[key] >= intervalMs) {
+                lastUpdateAt[key] = now;
+                return true;
+            }
+            return false;
+        }
         
         // 页面加载后开始倒计时
         window.addEventListener('load', function() {
@@ -723,27 +733,32 @@
                     await new Promise((resolve, reject) => {
                         try {
                             const gyro = new Gyroscope({ frequency: 60 });
-                            let gotReading = false;
+                            let initialized = false;
                             const onReading = () => {
-                                gotReading = true;
+                                if (!shouldUpdate('gyro')) return;
                                 const result = `✅ 陀螺仪数据:\n角速度X: ${gyro.x?.toFixed?.(3)}°/s\n角速度Y: ${gyro.y?.toFixed?.(3)}°/s\n角速度Z: ${gyro.z?.toFixed?.(3)}°/s`;
                                 testResults.gyroscope = { status: 'success', result };
-                                updateTestCard('gyroscope', 'success', result);
-                                gyro.stop();
-                                resolve();
+                                if (!initialized) {
+                                    updateTestCard('gyroscope', 'success', result);
+                                    initialized = true;
+                                    resolve();
+                                } else {
+                                    // 仅更新内容，避免重复闪烁状态
+                                    const el = document.getElementById('gyroscope-result');
+                                    if (el) el.textContent = result;
+                                }
                             };
                             gyro.addEventListener('reading', onReading);
                             gyro.addEventListener('error', (event) => {
-                                if (!gotReading) {
+                                if (!initialized) {
                                     reject(event.error || new Error('陀螺仪错误'));
                                 }
                             });
                             activeSensors.push(gyro);
                             gyro.start();
-                            // 超时保护
+                            // 超时保护（首次）
                             setTimeout(() => {
-                                if (!gotReading) {
-                                    try { gyro.stop(); } catch (_) {}
+                                if (!initialized) {
                                     reject(new Error('陀螺仪读取超时'));
                                 }
                             }, 3000);
@@ -753,27 +768,33 @@
                     });
                 } else if ('ondevicemotion' in window) {
                     await new Promise((resolve, reject) => {
-                        let handled = false;
+                        let initialized = false;
                         const handler = (e) => {
-                            handled = true;
+                            if (!shouldUpdate('gyro_dm')) return;
                             const rr = e.rotationRate;
                             if (rr && (rr.alpha != null || rr.beta != null || rr.gamma != null)) {
                                 const result = `✅ 陀螺仪数据(兼容):\nalpha: ${rr.alpha?.toFixed?.(3)}°/s\nbeta: ${rr.beta?.toFixed?.(3)}°/s\ngamma: ${rr.gamma?.toFixed?.(3)}°/s`;
                                 testResults.gyroscope = { status: 'success', result };
-                                updateTestCard('gyroscope', 'success', result);
-                            } else {
+                                if (!initialized) {
+                                    updateTestCard('gyroscope', 'success', result);
+                                    initialized = true;
+                                    resolve();
+                                } else {
+                                    const el = document.getElementById('gyroscope-result');
+                                    if (el) el.textContent = result;
+                                }
+                            } else if (!initialized) {
                                 const result = '⚠️ 设备不提供 rotationRate 数据';
                                 testResults.gyroscope = { status: 'warning', result };
                                 updateTestCard('gyroscope', 'warning', result);
+                                initialized = true;
+                                resolve();
                             }
-                            window.removeEventListener('devicemotion', handler);
-                            resolve();
                         };
-                        window.addEventListener('devicemotion', handler, { once: true });
+                        window.addEventListener('devicemotion', handler);
                         activeListeners.push({ target: window, type: 'devicemotion', handler });
                         setTimeout(() => {
-                            if (!handled) {
-                                window.removeEventListener('devicemotion', handler);
+                            if (!initialized) {
                                 reject(new Error('未收到 devicemotion 事件'));
                             }
                         }, 3000);
@@ -799,24 +820,28 @@
                     await new Promise((resolve, reject) => {
                         try {
                             const accel = new Accelerometer({ frequency: 60 });
-                            let got = false;
+                            let initialized = false;
                             const onReading = () => {
-                                got = true;
+                                if (!shouldUpdate('accel')) return;
                                 const result = `✅ 加速度计数据:\nX: ${accel.x?.toFixed?.(3)} m/s²\nY: ${accel.y?.toFixed?.(3)} m/s²\nZ: ${accel.z?.toFixed?.(3)} m/s²`;
                                 testResults.accelerometer = { status: 'success', result };
-                                updateTestCard('accelerometer', 'success', result);
-                                accel.stop();
-                                resolve();
+                                if (!initialized) {
+                                    updateTestCard('accelerometer', 'success', result);
+                                    initialized = true;
+                                    resolve();
+                                } else {
+                                    const el = document.getElementById('accelerometer-result');
+                                    if (el) el.textContent = result;
+                                }
                             };
                             accel.addEventListener('reading', onReading);
                             accel.addEventListener('error', (event) => {
-                                if (!got) reject(event.error || new Error('加速度计错误'));
+                                if (!initialized) reject(event.error || new Error('加速度计错误'));
                             });
                             activeSensors.push(accel);
                             accel.start();
                             setTimeout(() => {
-                                if (!got) {
-                                    try { accel.stop(); } catch (_) {}
+                                if (!initialized) {
                                     reject(new Error('加速度计读取超时'));
                                 }
                             }, 3000);
@@ -824,27 +849,33 @@
                     });
                 } else if ('ondevicemotion' in window) {
                     await new Promise((resolve, reject) => {
-                        let handled = false;
+                        let initialized = false;
                         const handler = (e) => {
-                            handled = true;
+                            if (!shouldUpdate('accel_dm')) return;
                             const a = e.accelerationIncludingGravity || e.acceleration;
                             if (a && (a.x != null || a.y != null || a.z != null)) {
                                 const result = `✅ 加速度(兼容):\nX: ${a.x?.toFixed?.(3)} m/s²\nY: ${a.y?.toFixed?.(3)} m/s²\nZ: ${a.z?.toFixed?.(3)} m/s²`;
                                 testResults.accelerometer = { status: 'success', result };
-                                updateTestCard('accelerometer', 'success', result);
-                            } else {
+                                if (!initialized) {
+                                    updateTestCard('accelerometer', 'success', result);
+                                    initialized = true;
+                                    resolve();
+                                } else {
+                                    const el = document.getElementById('accelerometer-result');
+                                    if (el) el.textContent = result;
+                                }
+                            } else if (!initialized) {
                                 const result = '⚠️ 未获取到加速度数据';
                                 testResults.accelerometer = { status: 'warning', result };
                                 updateTestCard('accelerometer', 'warning', result);
+                                initialized = true;
+                                resolve();
                             }
-                            window.removeEventListener('devicemotion', handler);
-                            resolve();
                         };
-                        window.addEventListener('devicemotion', handler, { once: true });
+                        window.addEventListener('devicemotion', handler);
                         activeListeners.push({ target: window, type: 'devicemotion', handler });
                         setTimeout(() => {
-                            if (!handled) {
-                                window.removeEventListener('devicemotion', handler);
+                            if (!initialized) {
                                 reject(new Error('未收到 devicemotion 事件'));
                             }
                         }, 3000);
@@ -868,20 +899,24 @@
                 await ensureMotionOrientationPermission();
                 if ('ondeviceorientation' in window) {
                     await new Promise((resolve, reject) => {
-                        let handled = false;
+                        let initialized = false;
                         const handler = (e) => {
-                            handled = true;
+                            if (!shouldUpdate('orientation')) return;
                             const result = `✅ 方向数据:\nalpha: ${e.alpha?.toFixed?.(2)}\nbeta: ${e.beta?.toFixed?.(2)}\ngamma: ${e.gamma?.toFixed?.(2)}`;
                             testResults.orientation = { status: 'success', result };
-                            updateTestCard('orientation', 'success', result);
-                            window.removeEventListener('deviceorientation', handler);
-                            resolve();
+                            if (!initialized) {
+                                updateTestCard('orientation', 'success', result);
+                                initialized = true;
+                                resolve();
+                            } else {
+                                const el = document.getElementById('orientation-result');
+                                if (el) el.textContent = result;
+                            }
                         };
-                        window.addEventListener('deviceorientation', handler, { once: true });
+                        window.addEventListener('deviceorientation', handler);
                         activeListeners.push({ target: window, type: 'deviceorientation', handler });
                         setTimeout(() => {
-                            if (!handled) {
-                                window.removeEventListener('deviceorientation', handler);
+                            if (!initialized) {
                                 reject(new Error('未收到 deviceorientation 事件'));
                             }
                         }, 3000);
@@ -905,22 +940,26 @@
                 await ensureMotionOrientationPermission();
                 if ('ondevicemotion' in window) {
                     await new Promise((resolve, reject) => {
-                        let handled = false;
+                        let initialized = false;
                         const handler = (e) => {
-                            handled = true;
+                            if (!shouldUpdate('motion')) return;
                             const a = e.accelerationIncludingGravity || e.acceleration;
                             const rr = e.rotationRate;
                             const result = `✅ 运动数据:\n加速度: ${a?.x?.toFixed?.(2)}, ${a?.y?.toFixed?.(2)}, ${a?.z?.toFixed?.(2)}\n角速度: ${rr?.alpha?.toFixed?.(2)}, ${rr?.beta?.toFixed?.(2)}, ${rr?.gamma?.toFixed?.(2)}\n间隔: ${e.interval}ms`;
                             testResults.motion = { status: 'success', result };
-                            updateTestCard('motion', 'success', result);
-                            window.removeEventListener('devicemotion', handler);
-                            resolve();
+                            if (!initialized) {
+                                updateTestCard('motion', 'success', result);
+                                initialized = true;
+                                resolve();
+                            } else {
+                                const el = document.getElementById('motion-result');
+                                if (el) el.textContent = result;
+                            }
                         };
-                        window.addEventListener('devicemotion', handler, { once: true });
+                        window.addEventListener('devicemotion', handler);
                         activeListeners.push({ target: window, type: 'devicemotion', handler });
                         setTimeout(() => {
-                            if (!handled) {
-                                window.removeEventListener('devicemotion', handler);
+                            if (!initialized) {
                                 reject(new Error('未收到 devicemotion 事件'));
                             }
                         }, 3000);
@@ -945,24 +984,28 @@
                     await new Promise((resolve, reject) => {
                         try {
                             const mag = new Magnetometer({ frequency: 10 });
-                            let got = false;
+                            let initialized = false;
                             const onReading = () => {
-                                got = true;
+                                if (!shouldUpdate('mag')) return;
                                 const result = `✅ 磁力计:\nX: ${mag.x?.toFixed?.(2)} µT\nY: ${mag.y?.toFixed?.(2)} µT\nZ: ${mag.z?.toFixed?.(2)} µT`;
                                 testResults.magnetometer = { status: 'success', result };
-                                updateTestCard('magnetometer', 'success', result);
-                                mag.stop();
-                                resolve();
+                                if (!initialized) {
+                                    updateTestCard('magnetometer', 'success', result);
+                                    initialized = true;
+                                    resolve();
+                                } else {
+                                    const el = document.getElementById('magnetometer-result');
+                                    if (el) el.textContent = result;
+                                }
                             };
                             mag.addEventListener('reading', onReading);
                             mag.addEventListener('error', (event) => {
-                                if (!got) reject(event.error || new Error('磁力计错误'));
+                                if (!initialized) reject(event.error || new Error('磁力计错误'));
                             });
                             activeSensors.push(mag);
                             mag.start();
                             setTimeout(() => {
-                                if (!got) {
-                                    try { mag.stop(); } catch (_) {}
+                                if (!initialized) {
                                     reject(new Error('磁力计读取超时'));
                                 }
                             }, 3000);
