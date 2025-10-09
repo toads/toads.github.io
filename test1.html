@@ -272,21 +272,49 @@
                 <div class="test-result" id="storage-result">准备测试存储权限...</div>
             </div>
             
-            <!-- IndexedDB 超大文件测试 -->
-            <div class="test-card" id="indexeddb-dos-card">
+            <!-- 陀螺仪测试 -->
+            <div class="test-card" id="gyroscope-card">
                 <div class="test-title">
-                    💥 IndexedDB DoS 测试
-                    <span class="test-status status-pending" id="indexeddb-dos-status">等待中</span>
+                    🧭 陀螺仪
+                    <span class="test-status status-pending" id="gyroscope-status">等待中</span>
                 </div>
-                <div class="test-result" id="indexeddb-dos-result">准备测试超大 IndexedDB 写入...</div>
-                <div class="test-progress" id="indexeddb-dos-progress" style="margin-top: 10px; display: none;">
-                    <div style="background: #e9ecef; border-radius: 10px; height: 8px; overflow: hidden;">
-                        <div id="indexeddb-dos-progress-fill" style="height: 100%; background: linear-gradient(45deg, #ff6b6b, #ff8e8e); width: 0%; transition: width 0.3s ease;"></div>
+                <div class="test-result" id="gyroscope-result">准备测试陀螺仪数据...</div>
                     </div>
-                    <div style="text-align: center; margin-top: 5px; font-size: 0.8em; color: #666;">
-                        <span id="indexeddb-dos-progress-text">0%</span>
+
+            <!-- 加速度计测试 -->
+            <div class="test-card" id="accelerometer-card">
+                <div class="test-title">
+                    📈 加速度计
+                    <span class="test-status status-pending" id="accelerometer-status">等待中</span>
                     </div>
+                <div class="test-result" id="accelerometer-result">准备测试加速度数据...</div>
                 </div>
+
+            <!-- 方向传感器（DeviceOrientation）测试 -->
+            <div class="test-card" id="orientation-card">
+                <div class="test-title">
+                    🧭 方向传感器
+                    <span class="test-status status-pending" id="orientation-status">等待中</span>
+                </div>
+                <div class="test-result" id="orientation-result">准备测试方向传感器...</div>
+            </div>
+
+            <!-- 运动传感器（DeviceMotion）测试 -->
+            <div class="test-card" id="motion-card">
+                <div class="test-title">
+                    🏃 运动传感器
+                    <span class="test-status status-pending" id="motion-status">等待中</span>
+                </div>
+                <div class="test-result" id="motion-result">准备测试运动传感器...</div>
+            </div>
+
+            <!-- 磁力计测试（可选） -->
+            <div class="test-card" id="magnetometer-card">
+                <div class="test-title">
+                    🧲 磁力计
+                    <span class="test-status status-pending" id="magnetometer-status">等待中</span>
+                </div>
+                <div class="test-result" id="magnetometer-result">准备测试磁力计...</div>
             </div>
         </div>
         
@@ -329,22 +357,29 @@
             notification: { status: 'pending', result: '' },
             clipboard: { status: 'pending', result: '' },
             storage: { status: 'pending', result: '' },
-            indexeddbDos: { status: 'pending', result: '' }
+            gyroscope: { status: 'pending', result: '' },
+            accelerometer: { status: 'pending', result: '' },
+            orientation: { status: 'pending', result: '' },
+            motion: { status: 'pending', result: '' },
+            magnetometer: { status: 'pending', result: '' }
         };
         
         let completedTests = 0;
-        let totalTests = 7;
+        let totalTests = 0;
         let isTestRunning = false;
         let countdownInterval;
-        let indexedDbTestRunning = false;
+        const activeSensors = [];
+        const activeListeners = [];
         
         // 页面加载后开始倒计时
         window.addEventListener('load', function() {
+            totalTests = Object.keys(testResults).length;
+            document.getElementById('total-tests').textContent = totalTests;
             startCountdown();
         });
         
         function startCountdown() {
-            let timeLeft = 5;
+            let timeLeft = 1;
             const timerElement = document.getElementById('timer');
             const countdownElement = document.getElementById('countdown');
             
@@ -656,167 +691,293 @@
             updateSummary();
         }
         
-        async function testIndexedDbDos() {
-            updateTestCard('indexeddbDos', 'pending', '正在测试 IndexedDB 超大文件写入...');
-            document.getElementById('indexeddb-dos-progress').style.display = 'block';
-            
-            indexedDbTestRunning = true;
-            
+        // iOS 13+ 需要用户手势触发的权限请求；此函数在测试时调用
+        async function ensureMotionOrientationPermission() {
             try {
-                if (!('indexedDB' in window)) {
-                    throw new Error('浏览器不支持 IndexedDB');
-                }
-                
-                // 创建测试数据库
-                const dbName = 'dos_test_db';
-                const dbVersion = 1;
-                const storeName = 'large_data';
-                
-                const db = await new Promise((resolve, reject) => {
-                    const request = indexedDB.open(dbName, dbVersion);
-                    request.onerror = () => reject(request.error);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains(storeName)) {
-                            db.createObjectStore(storeName, { keyPath: 'id' });
-                        }
-                    };
-                });
-                
-                let result = '🚀 IndexedDB DoS 测试开始...\n';
-                let totalWritten = 0;
-                let chunkSize = 10 * 1024 * 1024; // 10MB 每块
-                let maxSize = 100 * 1024 * 1024; // 最大测试 100MB
-                let chunkCount = 0;
-                let startTime = Date.now();
-                
-                result += `目标大小: ${Math.round(maxSize / 1024 / 1024)}MB\n`;
-                result += `块大小: ${Math.round(chunkSize / 1024 / 1024)}MB\n`;
-                
-                updateTestCard('indexeddbDos', 'pending', result);
-                
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                
-                // 生成大量数据并写入
-                while (totalWritten < maxSize && indexedDbTestRunning) {
-                    const chunkData = new ArrayBuffer(chunkSize);
-                    const uint8Array = new Uint8Array(chunkData);
-                    
-                    // 填充随机数据
-                    for (let i = 0; i < uint8Array.length; i++) {
-                        uint8Array[i] = Math.floor(Math.random() * 256);
+                // DeviceMotion 权限
+                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    const state = await DeviceMotionEvent.requestPermission();
+                    if (state !== 'granted') {
+                        throw new Error('运动传感器权限未授予');
                     }
-                    
-                    const dataObject = {
-                        id: chunkCount,
-                        data: chunkData,
-                        timestamp: Date.now(),
-                        size: chunkSize
-                    };
-                    
-                    await new Promise((resolve, reject) => {
-                        const request = store.add(dataObject);
-                        request.onsuccess = () => resolve();
-                        request.onerror = () => reject(request.error);
-                    });
-                    
-                    totalWritten += chunkSize;
-                    chunkCount++;
-                    
-                    // 更新进度
-                    const progress = Math.min((totalWritten / maxSize) * 100, 100);
-                    document.getElementById('indexeddb-dos-progress-fill').style.width = progress + '%';
-                    document.getElementById('indexeddb-dos-progress-text').textContent = Math.round(progress) + '%';
-                    
-                    // 更新结果
-                    const currentTime = Date.now();
-                    const elapsed = (currentTime - startTime) / 1000;
-                    const speed = (totalWritten / 1024 / 1024) / elapsed;
-                    
-                    result = `🚀 IndexedDB DoS 测试进行中...\n`;
-                    result += `已写入: ${Math.round(totalWritten / 1024 / 1024)}MB / ${Math.round(maxSize / 1024 / 1024)}MB\n`;
-                    result += `块数: ${chunkCount}\n`;
-                    result += `速度: ${speed.toFixed(2)}MB/s\n`;
-                    result += `耗时: ${elapsed.toFixed(1)}s\n`;
-                    
-                    updateTestCard('indexeddbDos', 'pending', result);
-                    
-                    // 检查存储配额
-                    try {
-                        if ('storage' in navigator && 'estimate' in navigator.storage) {
-                            const estimate = await navigator.storage.estimate();
-                            const usedPercent = (estimate.usage / estimate.quota) * 100;
-                            result += `存储使用率: ${usedPercent.toFixed(1)}%\n`;
-                            
-                            if (usedPercent > 90) {
-                                result += `⚠️ 警告: 存储使用率超过90%！\n`;
-                            }
-                        }
-                    } catch (e) {
-                        // 忽略配额检查错误
+                }
+                // DeviceOrientation 权限
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    const state2 = await DeviceOrientationEvent.requestPermission();
+                    if (state2 !== 'granted') {
+                        throw new Error('方向传感器权限未授予');
                     }
-                    
-                    // 短暂延迟避免阻塞UI
-                    await new Promise(resolve => setTimeout(resolve, 10));
                 }
-                
-                const endTime = Date.now();
-                const totalTime = (endTime - startTime) / 1000;
-                const avgSpeed = (totalWritten / 1024 / 1024) / totalTime;
-                
-                if (indexedDbTestRunning) {
-                    result = `✅ IndexedDB DoS 测试完成！\n`;
-                    result += `总写入: ${Math.round(totalWritten / 1024 / 1024)}MB\n`;
-                    result += `块数: ${chunkCount}\n`;
-                    result += `总耗时: ${totalTime.toFixed(1)}s\n`;
-                    result += `平均速度: ${avgSpeed.toFixed(2)}MB/s\n`;
-                    result += `数据库大小: ${dbName}\n`;
-                    
-                    // 检查最终存储状态
-                    try {
-                        if ('storage' in navigator && 'estimate' in navigator.storage) {
-                            const estimate = await navigator.storage.estimate();
-                            result += `当前存储使用: ${Math.round(estimate.usage / 1024 / 1024)}MB\n`;
-                            result += `存储配额: ${Math.round(estimate.quota / 1024 / 1024)}MB\n`;
-                            result += `使用率: ${((estimate.usage / estimate.quota) * 100).toFixed(1)}%\n`;
-                        }
-                    } catch (e) {
-                        result += `无法获取存储配额信息\n`;
-                    }
-                    
-                    testResults.indexeddbDos = { status: 'success', result };
-                    updateTestCard('indexeddbDos', 'success', result);
-                } else {
-                    result = `⏹️ IndexedDB DoS 测试被停止\n`;
-                    result += `已写入: ${Math.round(totalWritten / 1024 / 1024)}MB\n`;
-                    result += `块数: ${chunkCount}\n`;
-                    testResults.indexeddbDos = { status: 'warning', result };
-                    updateTestCard('indexeddbDos', 'warning', result);
-                }
-                
-                // 清理数据库
-                try {
-                    db.close();
-                    const deleteRequest = indexedDB.deleteDatabase(dbName);
-                    await new Promise((resolve, reject) => {
-                        deleteRequest.onsuccess = () => resolve();
-                        deleteRequest.onerror = () => reject(deleteRequest.error);
-                    });
-                } catch (e) {
-                    console.warn('清理数据库失败:', e);
-                }
-                
-            } catch (error) {
-                const result = `❌ IndexedDB DoS 测试失败: ${error.message}`;
-                testResults.indexeddbDos = { status: 'error', result };
-                updateTestCard('indexeddbDos', 'error', result);
-            } finally {
-                indexedDbTestRunning = false;
-                document.getElementById('indexeddb-dos-progress').style.display = 'none';
+                return true;
+            } catch (e) {
+                // 非 iOS 情况一般不会抛错
+                return true;
             }
-            
+        }
+
+        async function testGyroscope() {
+            updateTestCard('gyroscope', 'pending', '正在测试陀螺仪...');
+            try {
+                await ensureMotionOrientationPermission();
+                if ('Gyroscope' in window) {
+                    await new Promise((resolve, reject) => {
+                        try {
+                            const gyro = new Gyroscope({ frequency: 60 });
+                            let gotReading = false;
+                            const onReading = () => {
+                                gotReading = true;
+                                const result = `✅ 陀螺仪数据:\n角速度X: ${gyro.x?.toFixed?.(3)}°/s\n角速度Y: ${gyro.y?.toFixed?.(3)}°/s\n角速度Z: ${gyro.z?.toFixed?.(3)}°/s`;
+                                testResults.gyroscope = { status: 'success', result };
+                                updateTestCard('gyroscope', 'success', result);
+                                gyro.stop();
+                                resolve();
+                            };
+                            gyro.addEventListener('reading', onReading);
+                            gyro.addEventListener('error', (event) => {
+                                if (!gotReading) {
+                                    reject(event.error || new Error('陀螺仪错误'));
+                                }
+                            });
+                            activeSensors.push(gyro);
+                            gyro.start();
+                            // 超时保护
+                            setTimeout(() => {
+                                if (!gotReading) {
+                                    try { gyro.stop(); } catch (_) {}
+                                    reject(new Error('陀螺仪读取超时'));
+                                }
+                            }, 3000);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                } else if ('ondevicemotion' in window) {
+                    await new Promise((resolve, reject) => {
+                        let handled = false;
+                        const handler = (e) => {
+                            handled = true;
+                            const rr = e.rotationRate;
+                            if (rr && (rr.alpha != null || rr.beta != null || rr.gamma != null)) {
+                                const result = `✅ 陀螺仪数据(兼容):\nalpha: ${rr.alpha?.toFixed?.(3)}°/s\nbeta: ${rr.beta?.toFixed?.(3)}°/s\ngamma: ${rr.gamma?.toFixed?.(3)}°/s`;
+                                testResults.gyroscope = { status: 'success', result };
+                                updateTestCard('gyroscope', 'success', result);
+                            } else {
+                                const result = '⚠️ 设备不提供 rotationRate 数据';
+                                testResults.gyroscope = { status: 'warning', result };
+                                updateTestCard('gyroscope', 'warning', result);
+                            }
+                            window.removeEventListener('devicemotion', handler);
+                            resolve();
+                        };
+                        window.addEventListener('devicemotion', handler, { once: true });
+                        activeListeners.push({ target: window, type: 'devicemotion', handler });
+                        setTimeout(() => {
+                            if (!handled) {
+                                window.removeEventListener('devicemotion', handler);
+                                reject(new Error('未收到 devicemotion 事件'));
+                            }
+                        }, 3000);
+                    });
+                } else {
+                    throw new Error('浏览器不支持陀螺仪接口');
+                }
+            } catch (error) {
+                const result = `❌ 陀螺仪测试失败: ${error.message}`;
+                testResults.gyroscope = { status: 'error', result };
+                updateTestCard('gyroscope', 'error', result);
+            }
+            completedTests++;
+            updateProgress();
+            updateSummary();
+        }
+
+        async function testAccelerometer() {
+            updateTestCard('accelerometer', 'pending', '正在测试加速度计...');
+            try {
+                await ensureMotionOrientationPermission();
+                if ('Accelerometer' in window) {
+                    await new Promise((resolve, reject) => {
+                        try {
+                            const accel = new Accelerometer({ frequency: 60 });
+                            let got = false;
+                            const onReading = () => {
+                                got = true;
+                                const result = `✅ 加速度计数据:\nX: ${accel.x?.toFixed?.(3)} m/s²\nY: ${accel.y?.toFixed?.(3)} m/s²\nZ: ${accel.z?.toFixed?.(3)} m/s²`;
+                                testResults.accelerometer = { status: 'success', result };
+                                updateTestCard('accelerometer', 'success', result);
+                                accel.stop();
+                                resolve();
+                            };
+                            accel.addEventListener('reading', onReading);
+                            accel.addEventListener('error', (event) => {
+                                if (!got) reject(event.error || new Error('加速度计错误'));
+                            });
+                            activeSensors.push(accel);
+                            accel.start();
+                            setTimeout(() => {
+                                if (!got) {
+                                    try { accel.stop(); } catch (_) {}
+                                    reject(new Error('加速度计读取超时'));
+                                }
+                            }, 3000);
+                        } catch (e) { reject(e); }
+                    });
+                } else if ('ondevicemotion' in window) {
+                    await new Promise((resolve, reject) => {
+                        let handled = false;
+                        const handler = (e) => {
+                            handled = true;
+                            const a = e.accelerationIncludingGravity || e.acceleration;
+                            if (a && (a.x != null || a.y != null || a.z != null)) {
+                                const result = `✅ 加速度(兼容):\nX: ${a.x?.toFixed?.(3)} m/s²\nY: ${a.y?.toFixed?.(3)} m/s²\nZ: ${a.z?.toFixed?.(3)} m/s²`;
+                                testResults.accelerometer = { status: 'success', result };
+                                updateTestCard('accelerometer', 'success', result);
+                            } else {
+                                const result = '⚠️ 未获取到加速度数据';
+                                testResults.accelerometer = { status: 'warning', result };
+                                updateTestCard('accelerometer', 'warning', result);
+                            }
+                            window.removeEventListener('devicemotion', handler);
+                            resolve();
+                        };
+                        window.addEventListener('devicemotion', handler, { once: true });
+                        activeListeners.push({ target: window, type: 'devicemotion', handler });
+                        setTimeout(() => {
+                            if (!handled) {
+                                window.removeEventListener('devicemotion', handler);
+                                reject(new Error('未收到 devicemotion 事件'));
+                            }
+                        }, 3000);
+                    });
+                } else {
+                    throw new Error('浏览器不支持加速度接口');
+                }
+            } catch (error) {
+                const result = `❌ 加速度计测试失败: ${error.message}`;
+                testResults.accelerometer = { status: 'error', result };
+                updateTestCard('accelerometer', 'error', result);
+            }
+            completedTests++;
+            updateProgress();
+            updateSummary();
+        }
+
+        async function testOrientation() {
+            updateTestCard('orientation', 'pending', '正在测试方向传感器...');
+            try {
+                await ensureMotionOrientationPermission();
+                if ('ondeviceorientation' in window) {
+                    await new Promise((resolve, reject) => {
+                        let handled = false;
+                        const handler = (e) => {
+                            handled = true;
+                            const result = `✅ 方向数据:\nalpha: ${e.alpha?.toFixed?.(2)}\nbeta: ${e.beta?.toFixed?.(2)}\ngamma: ${e.gamma?.toFixed?.(2)}`;
+                            testResults.orientation = { status: 'success', result };
+                            updateTestCard('orientation', 'success', result);
+                            window.removeEventListener('deviceorientation', handler);
+                            resolve();
+                        };
+                        window.addEventListener('deviceorientation', handler, { once: true });
+                        activeListeners.push({ target: window, type: 'deviceorientation', handler });
+                        setTimeout(() => {
+                            if (!handled) {
+                                window.removeEventListener('deviceorientation', handler);
+                                reject(new Error('未收到 deviceorientation 事件'));
+                            }
+                        }, 3000);
+                    });
+                } else {
+                    throw new Error('浏览器不支持 DeviceOrientation');
+                }
+            } catch (error) {
+                const result = `❌ 方向传感器测试失败: ${error.message}`;
+                testResults.orientation = { status: 'error', result };
+                updateTestCard('orientation', 'error', result);
+            }
+            completedTests++;
+            updateProgress();
+            updateSummary();
+        }
+
+        async function testMotion() {
+            updateTestCard('motion', 'pending', '正在测试运动传感器...');
+            try {
+                await ensureMotionOrientationPermission();
+                if ('ondevicemotion' in window) {
+                    await new Promise((resolve, reject) => {
+                        let handled = false;
+                        const handler = (e) => {
+                            handled = true;
+                            const a = e.accelerationIncludingGravity || e.acceleration;
+                            const rr = e.rotationRate;
+                            const result = `✅ 运动数据:\n加速度: ${a?.x?.toFixed?.(2)}, ${a?.y?.toFixed?.(2)}, ${a?.z?.toFixed?.(2)}\n角速度: ${rr?.alpha?.toFixed?.(2)}, ${rr?.beta?.toFixed?.(2)}, ${rr?.gamma?.toFixed?.(2)}\n间隔: ${e.interval}ms`;
+                            testResults.motion = { status: 'success', result };
+                            updateTestCard('motion', 'success', result);
+                            window.removeEventListener('devicemotion', handler);
+                            resolve();
+                        };
+                        window.addEventListener('devicemotion', handler, { once: true });
+                        activeListeners.push({ target: window, type: 'devicemotion', handler });
+                        setTimeout(() => {
+                            if (!handled) {
+                                window.removeEventListener('devicemotion', handler);
+                                reject(new Error('未收到 devicemotion 事件'));
+                            }
+                        }, 3000);
+                    });
+                } else {
+                    throw new Error('浏览器不支持 DeviceMotion');
+                }
+            } catch (error) {
+                const result = `❌ 运动传感器测试失败: ${error.message}`;
+                testResults.motion = { status: 'error', result };
+                updateTestCard('motion', 'error', result);
+            }
+            completedTests++;
+            updateProgress();
+            updateSummary();
+        }
+
+        async function testMagnetometer() {
+            updateTestCard('magnetometer', 'pending', '正在测试磁力计...');
+            try {
+                if ('Magnetometer' in window) {
+                    await new Promise((resolve, reject) => {
+                        try {
+                            const mag = new Magnetometer({ frequency: 10 });
+                            let got = false;
+                            const onReading = () => {
+                                got = true;
+                                const result = `✅ 磁力计:\nX: ${mag.x?.toFixed?.(2)} µT\nY: ${mag.y?.toFixed?.(2)} µT\nZ: ${mag.z?.toFixed?.(2)} µT`;
+                                testResults.magnetometer = { status: 'success', result };
+                                updateTestCard('magnetometer', 'success', result);
+                                mag.stop();
+                                resolve();
+                            };
+                            mag.addEventListener('reading', onReading);
+                            mag.addEventListener('error', (event) => {
+                                if (!got) reject(event.error || new Error('磁力计错误'));
+                            });
+                            activeSensors.push(mag);
+                            mag.start();
+                            setTimeout(() => {
+                                if (!got) {
+                                    try { mag.stop(); } catch (_) {}
+                                    reject(new Error('磁力计读取超时'));
+                                }
+                            }, 3000);
+                        } catch (e) { reject(e); }
+                    });
+                } else {
+                    const result = '⚠️ 浏览器/设备不支持磁力计';
+                    testResults.magnetometer = { status: 'warning', result };
+                    updateTestCard('magnetometer', 'warning', result);
+                }
+            } catch (error) {
+                const result = `❌ 磁力计测试失败: ${error.message}`;
+                testResults.magnetometer = { status: 'error', result };
+                updateTestCard('magnetometer', 'error', result);
+            }
             completedTests++;
             updateProgress();
             updateSummary();
@@ -827,6 +988,8 @@
             
             isTestRunning = true;
             completedTests = 0;
+            totalTests = Object.keys(testResults).length;
+            document.getElementById('total-tests').textContent = totalTests;
             
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
@@ -840,7 +1003,11 @@
                 testNotification(),
                 testClipboard(),
                 testStorage(),
-                testIndexedDbDos()
+                testGyroscope(),
+                testAccelerometer(),
+                testOrientation(),
+                testMotion(),
+                testMagnetometer()
             ];
             
             try {
@@ -856,14 +1023,23 @@
         
         function stopAllTests() {
             isTestRunning = false;
-            indexedDbTestRunning = false;
+            // 停止传感器
+            try { activeSensors.forEach(s => { try { s.stop && s.stop(); } catch (_) {} }); } catch (_) {}
+            activeSensors.length = 0;
+            // 解除事件监听
+            try { activeListeners.forEach(l => { try { l.target.removeEventListener(l.type, l.handler); } catch (_) {} }); } catch (_) {}
+            activeListeners.length = 0;
             document.getElementById('startBtn').disabled = false;
             document.getElementById('stopBtn').disabled = true;
         }
         
         function resetAllTests() {
             isTestRunning = false;
-            indexedDbTestRunning = false;
+            // 清理活跃资源
+            try { activeSensors.forEach(s => { try { s.stop && s.stop(); } catch (_) {} }); } catch (_) {}
+            activeSensors.length = 0;
+            try { activeListeners.forEach(l => { try { l.target.removeEventListener(l.type, l.handler); } catch (_) {} }); } catch (_) {}
+            activeListeners.length = 0;
             completedTests = 0;
             
             testResults = {
@@ -873,20 +1049,23 @@
                 notification: { status: 'pending', result: '' },
                 clipboard: { status: 'pending', result: '' },
                 storage: { status: 'pending', result: '' },
-                indexeddbDos: { status: 'pending', result: '' }
+                gyroscope: { status: 'pending', result: '' },
+                accelerometer: { status: 'pending', result: '' },
+                orientation: { status: 'pending', result: '' },
+                motion: { status: 'pending', result: '' },
+                magnetometer: { status: 'pending', result: '' }
             };
             
             // 重置所有卡片
-            const testNames = ['geolocation', 'microphone', 'camera', 'notification', 'clipboard', 'storage', 'indexeddbDos'];
+            const testNames = ['geolocation', 'microphone', 'camera', 'notification', 'clipboard', 'storage', 'gyroscope', 'accelerometer', 'orientation', 'motion', 'magnetometer'];
             testNames.forEach(name => {
                 const displayName = name === 'indexeddbDos' ? 'IndexedDB DoS' : name;
                 updateTestCard(name, 'pending', `准备测试${displayName}权限...`);
             });
             
-            // 重置 IndexedDB 进度条
-            document.getElementById('indexeddb-dos-progress').style.display = 'none';
-            document.getElementById('indexeddb-dos-progress-fill').style.width = '0%';
-            document.getElementById('indexeddb-dos-progress-text').textContent = '0%';
+            // 更新总测试数
+            totalTests = Object.keys(testResults).length;
+            document.getElementById('total-tests').textContent = totalTests;
             
             // 重置进度条和统计
             updateProgress();

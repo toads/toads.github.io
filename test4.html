@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexedDB 零数据高并发写入压力测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+        .test-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .control-group input, .control-group select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress-section { margin: 20px 0; }
+        .progress-bar {
+            width: 100%; height: 25px; background: #e9ecef; border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(45deg, #28a745, #20c997); width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .stat-label { font-size: 0.9em; color: #6c757d; margin-bottom: 5px; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #495057; }
+        .log-section { background: #2d3748; color: #e2e8f0; border-radius: 8px; padding: 20px; margin-top: 20px; font-family: 'Courier New', monospace; font-size: 14px; max-height: 300px; overflow-y: auto; }
+        .log-entry { margin-bottom: 5px; padding: 2px 0; }
+        .log-info { color: #63b3ed; }
+        .log-success { color: #68d391; }
+        .log-warning { color: #f6e05e; }
+        .log-error { color: #fc8181; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-pending { background: #6c757d; }
+        .status-running { background: #ffc107; animation: pulse 1s infinite; }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
+        .warning-box { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0; color: #856404; }
+        .warning-box h4 { margin-bottom: 10px; color: #856404; }
+    </style>
+    <meta http-equiv="origin-trial" content="">
+    <meta name="color-scheme" content="light dark">
+</head>
+<body>
+    <div class="container">
+        <h1>💾 IndexedDB 高并发零数据写入测试</h1>
+        <div class="warning-box">
+            <h4>⚠️ 重要提示</h4>
+            <p>本页仅测试 IndexedDB 写入，默认不会自动清理历史数据。请确保有足够磁盘空间，完成后可手动清理。</p>
+        </div>
+        <div class="test-section">
+            <div class="test-title">
+                <span class="status-indicator status-pending" id="statusIndicator"></span>
+                IndexedDB 写入配置
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="totalSizeGB">目标大小 (GB)</label>
+                    <input type="number" id="totalSizeGB" value="12" min="1" max="2000">
+                </div>
+                <div class="control-group">
+                    <label for="chunkSizeMB">块大小 (MB)</label>
+                    <input type="number" id="chunkSizeMB" value="16" min="1" max="1024">
+                </div>
+                <div class="control-group">
+                    <label for="concurrency">并发数</label>
+                    <input type="number" id="concurrency" value="8" min="1" max="64">
+                </div>
+                <div class="control-group">
+                    <label for="dbName">数据库名</label>
+                    <input type="text" id="dbName" value="idb_zero_bench">
+                </div>
+                <div class="control-group">
+                    <label for="storeName">对象仓库名</label>
+                    <input type="text" id="storeName" value="chunks">
+                </div>
+                <div class="control-group">
+                    <label for="persistOpt">持久化</label>
+                    <select id="persistOpt">
+                        <option value="auto" selected>自动申请</option>
+                        <option value="off">关闭</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <button id="startBtn" onclick="startTest()">🚀 开始写入</button>
+                </div>
+                <div class="control-group">
+                    <button id="stopBtn" onclick="stopTest()" disabled>⏹️ 停止</button>
+                </div>
+                <div class="control-group">
+                    <button id="clearBtn" onclick="clearAll()">🗑️ 手动清空</button>
+                </div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill">0%</div></div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">已写入</div><div class="stat-value" id="written">0 MB</div></div>
+                <div class="stat-card"><div class="stat-label">写入速度</div><div class="stat-value" id="speed">0 MB/s</div></div>
+                <div class="stat-card"><div class="stat-label">块数</div><div class="stat-value" id="chunks">0</div></div>
+                <div class="stat-card"><div class="stat-label">耗时</div><div class="stat-value" id="elapsed">0s</div></div>
+                <div class="stat-card"><div class="stat-label">存储使用率</div><div class="stat-value" id="usage">0%</div></div>
+                <div class="stat-card"><div class="stat-label">存储配额</div><div class="stat-value" id="quota">0 MB</div></div>
+            </div>
+        </div>
+        <div class="log-section" id="log"></div>
+    </div>
+    <script>
+        let db = null;
+        let isRunning = false;
+        let totalTargetBytes = 0;
+        let writtenBytes = 0;
+        let chunkSizeBytes = 0;
+        let totalChunks = 0;
+        let startTime = 0;
+        let zeroBuffer = null; // shared zero buffer
+        let zeroBlob = null;   // shared zero blob
+        let writerAbort = false;
+
+        function log(msg, type = 'info') {
+            const el = document.getElementById('log');
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function setStatus(status) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = `status-indicator status-${status}`;
+        }
+
+        function fmtMB(bytes) { return Math.round(bytes / 1024 / 1024); }
+
+        async function updateStorageEstimate() {
+            try {
+                if ('storage' in navigator && 'estimate' in navigator.storage) {
+                    const est = await navigator.storage.estimate();
+                    const usagePct = est.quota ? (est.usage / est.quota) * 100 : 0;
+                    document.getElementById('usage').textContent = `${usagePct.toFixed(1)}%`;
+                    document.getElementById('quota').textContent = `${Math.round((est.quota || 0) / 1024 / 1024)} MB`;
+                }
+            } catch (e) {
+                log(`无法获取存储估算: ${e.message}`, 'warning');
+            }
+        }
+
+        function updateStatsUI() {
+            const elapsedSec = (Date.now() - startTime) / 1000;
+            const speed = elapsedSec > 0 ? (writtenBytes / 1024 / 1024) / elapsedSec : 0;
+            document.getElementById('written').textContent = `${fmtMB(writtenBytes)} MB`;
+            document.getElementById('speed').textContent = `${speed.toFixed(2)} MB/s`;
+            document.getElementById('chunks').textContent = `${totalChunks}`;
+            document.getElementById('elapsed').textContent = `${elapsedSec.toFixed(1)}s`;
+            const progress = Math.min((writtenBytes / totalTargetBytes) * 100, 100);
+            const fill = document.getElementById('progressFill');
+            fill.style.width = `${progress}%`;
+            fill.textContent = `${Math.round(progress)}%`;
+        }
+
+        function openDB(name, storeName) {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(name, 1);
+                req.onerror = () => reject(req.error);
+                req.onupgradeneeded = (ev) => {
+                    const idb = ev.target.result;
+                    if (!idb.objectStoreNames.contains(storeName)) {
+                        idb.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+            });
+        }
+
+        async function ensurePersistenceIfRequested() {
+            const opt = document.getElementById('persistOpt').value;
+            if (opt === 'off') return;
+            try {
+                if (navigator.storage && navigator.storage.persist) {
+                    const persisted = await navigator.storage.persisted();
+                    if (!persisted) {
+                        const ok = await navigator.storage.persist();
+                        log(ok ? '已申请持久化存储成功' : '持久化存储申请被拒绝', ok ? 'success' : 'warning');
+                    } else {
+                        log('站点已处于持久化存储', 'info');
+                    }
+                }
+            } catch (e) {
+                log(`申请持久化失败: ${e.message}`, 'warning');
+            }
+        }
+
+        function makeZeroChunk(size) {
+            if (!zeroBuffer || zeroBuffer.byteLength !== size) {
+                zeroBuffer = new ArrayBuffer(size); // 默认即为0
+                zeroBlob = new Blob([zeroBuffer]);
+            }
+            return zeroBlob;
+        }
+
+        function addChunk(idb, storeName, payload) {
+            return new Promise((resolve, reject) => {
+                const tx = idb.transaction([storeName], 'readwrite', { durability: 'relaxed' });
+                const store = tx.objectStore(storeName);
+                const rec = { data: payload, size: payload.size || payload.byteLength || 0, ts: Date.now() };
+                const req = store.add(rec);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function writerLoop(id) {
+            const storeName = document.getElementById('storeName').value.trim();
+            while (isRunning && writtenBytes < totalTargetBytes && !writerAbort) {
+                const blob = makeZeroChunk(chunkSizeBytes);
+                try {
+                    await addChunk(db, storeName, blob);
+                    writtenBytes += chunkSizeBytes;
+                    totalChunks += 1;
+                    if ((totalChunks % 8) === 0) {
+                        updateStatsUI();
+                    }
+                } catch (e) {
+                    if (e && (e.name === 'QuotaExceededError' || /quota/i.test(e.message))) {
+                        log(`并发${id}触发配额限制: ${e.message}`, 'warning');
+                        writerAbort = true;
+                        break;
+                    }
+                    log(`并发${id}写入失败: ${e.message}`, 'error');
+                    // 短暂停顿再重试，避免忙等
+                    await new Promise(r => setTimeout(r, 10));
+                }
+                // 让出主线程
+                await new Promise(r => setTimeout(r, 0));
+            }
+        }
+
+        async function startTest() {
+            if (isRunning) return;
+            const totalGB = Math.max(1, parseInt(document.getElementById('totalSizeGB').value || '1', 10));
+            const chunkMB = Math.max(1, parseInt(document.getElementById('chunkSizeMB').value || '1', 10));
+            const concurrency = Math.max(1, parseInt(document.getElementById('concurrency').value || '1', 10));
+            const dbName = document.getElementById('dbName').value.trim() || 'idb_zero_bench';
+            const storeName = document.getElementById('storeName').value.trim() || 'chunks';
+
+            totalTargetBytes = totalGB * 1024 * 1024 * 1024;
+            chunkSizeBytes = chunkMB * 1024 * 1024;
+            writtenBytes = 0;
+            totalChunks = 0;
+            writerAbort = false;
+            startTime = Date.now();
+            updateStatsUI();
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            setStatus('running');
+            log(`开始写入: 目标 ${totalGB}GB, 块 ${chunkMB}MB, 并发 ${concurrency}`, 'info');
+
+            try {
+                await ensurePersistenceIfRequested();
+                db = await openDB(dbName, storeName);
+                log('数据库可用，开始并发写入...', 'success');
+                isRunning = true;
+
+                const workers = Array.from({ length: concurrency }, (_, i) => writerLoop(i + 1));
+                await Promise.race([
+                    Promise.allSettled(workers),
+                    // Watchdog to update UI and storage estimate periodically
+                    (async () => {
+                        while (isRunning) {
+                            updateStatsUI();
+                            await updateStorageEstimate();
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                    })()
+                ]);
+
+            } catch (e) {
+                log(`启动失败: ${e.message}`, 'error');
+                setStatus('error');
+            } finally {
+                isRunning = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                updateStatsUI();
+                await updateStorageEstimate();
+                if (writerAbort) {
+                    log(`因配额限制或错误终止。已写入约 ${fmtMB(writtenBytes)} MB`, 'warning');
+                    setStatus('pending');
+                } else if (writtenBytes >= totalTargetBytes) {
+                    log(`写入完成！总计 ${fmtMB(writtenBytes)} MB`, 'success');
+                    setStatus('success');
+                } else {
+                    log(`已停止。总计 ${fmtMB(writtenBytes)} MB`, 'info');
+                    setStatus('pending');
+                }
+            }
+        }
+
+        function stopTest() {
+            if (!isRunning) return;
+            log('请求停止写入...', 'warning');
+            isRunning = false;
+        }
+
+        async function clearAll() {
+            if (isRunning) {
+                log('请先停止写入再清空', 'warning');
+                return;
+            }
+            try {
+                const dbName = document.getElementById('dbName').value.trim() || 'idb_zero_bench';
+                if (db) { try { db.close(); } catch (_) {} }
+                await new Promise((resolve, reject) => {
+                    const del = indexedDB.deleteDatabase(dbName);
+                    del.onsuccess = () => resolve();
+                    del.onerror = () => reject(del.error);
+                    del.onblocked = () => log('删除被阻塞，请关闭其他该站点页面后重试', 'warning');
+                });
+                log('IndexedDB 数据库已清空', 'success');
+                await updateStorageEstimate();
+                // 重置统计
+                writtenBytes = 0; totalChunks = 0; startTime = Date.now(); updateStatsUI();
+            } catch (e) {
+                log(`清空失败: ${e.message}`, 'error');
+            }
+        }
+
+        window.addEventListener('load', async () => {
+            log('页面加载完成，准备就绪', 'info');
+            await updateStorageEstimate();
+            setStatus('pending');
+        });
+    </script>
+    <!--
+        说明：
+        - 仅写入零数据（通过共享的 ArrayBuffer/Blob），避免随机生成开销。
+        - 并发通过多个独立事务循环实现，提升吞吐量；事务耐久性设为 relaxed 加速落盘。
+        - 不会在开始时清理历史数据；仅在“手动清空”时删除 DB。
+        - 已尝试申请 Storage Persistence，减少浏览器回收风险，但是否生效由浏览器策略决定。
+        - 10GB+ 目标是否可达取决于浏览器/平台配额策略。
+    -->
+</body>
+<script>
+</script>
+</html>
+
