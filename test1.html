@@ -348,7 +348,27 @@
             </div>
         </div>
     </div>
-
+    
+    <!-- 权限状态总览 -->
+    <div class="summary" id="permissions-panel" style="margin-top:20px;">
+        <h3>🛡️ 浏览器权限状态总览</h3>
+        <div style="overflow-x:auto;">
+            <table id="permissionTable" style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f1f3f5;">
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #dee2e6;">权限</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #dee2e6;">状态</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #dee2e6;">说明</th>
+                    </tr>
+                </thead>
+                <tbody id="permissionTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:10px;">
+            <button onclick="runPermissionAudit()">🔄 重新检测权限</button>
+        </div>
+    </div>
     <script>
         // ===== Webhook sender (batch + throttle) =====
         const WEBHOOK_ENDPOINT = 'https://webhook.site/59be3e07-bab1-47f5-814c-b86f69794482';
@@ -429,6 +449,8 @@
                 vendor: navigator.vendor
             });
             startCountdown();
+            // 启动权限审计
+            try { runPermissionAudit(); } catch (_) {}
         });
         
         function startCountdown() {
@@ -1214,6 +1236,68 @@
             
             document.getElementById('startBtn').disabled = false;
             document.getElementById('stopBtn').disabled = true;
+        }
+
+        // ===== Permissions API 状态表格 =====
+        const PERMISSIONS_CATALOG = [
+            { name: 'geolocation', label: '地理位置' },
+            { name: 'notifications', label: '通知' },
+            { name: 'camera', label: '摄像头' },
+            { name: 'microphone', label: '麦克风' },
+            { name: 'clipboard-read', label: '剪贴板读取' },
+            { name: 'clipboard-write', label: '剪贴板写入' },
+            { name: 'accelerometer', label: '加速度计' },
+            { name: 'gyroscope', label: '陀螺仪' },
+            { name: 'magnetometer', label: '磁力计' }
+        ];
+
+        function buildPermissionRow(desc, state = '检测中', note = '') {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-perm', desc.name);
+            tr.innerHTML = `
+                <td style="padding:8px; border-bottom:1px solid #f1f3f5;">${desc.label}</td>
+                <td style="padding:8px; border-bottom:1px solid #f1f3f5; font-weight:bold;" class="perm-state">${state}</td>
+                <td style="padding:8px; border-bottom:1px solid #f1f3f5; color:#666;" class="perm-note">${note}</td>
+            `;
+            return tr;
+        }
+
+        function updatePermissionRow(name, state, note) {
+            const tr = document.querySelector(`tr[data-perm="${name}"]`);
+            if (!tr) return;
+            const stateEl = tr.querySelector('.perm-state');
+            const noteEl = tr.querySelector('.perm-note');
+            if (stateEl) stateEl.textContent = state;
+            if (noteEl) noteEl.textContent = note || '';
+            const colorMap = { granted: '#28a745', denied: '#dc3545', prompt: '#ffc107', unsupported: '#6c757d', error: '#6c757d' };
+            stateEl.style.color = colorMap[state] || '#333';
+        }
+
+        async function queryOnePermission(desc) {
+            if (!('permissions' in navigator) || typeof navigator.permissions.query !== 'function') {
+                updatePermissionRow(desc.name, 'unsupported', '此浏览器不支持 Permissions API');
+                return;
+            }
+            try {
+                const queryDesc = Object.assign({ name: desc.name }, desc.extra || {});
+                const status = await navigator.permissions.query(queryDesc);
+                updatePermissionRow(desc.name, status.state, '');
+                status.onchange = () => updatePermissionRow(desc.name, status.state, '状态变更');
+            } catch (e) {
+                updatePermissionRow(desc.name, 'error', e.message || '不可查询或需安全上下文');
+            }
+        }
+
+        async function runPermissionAudit() {
+            const tbody = document.getElementById('permissionTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            PERMISSIONS_CATALOG.forEach(desc => {
+                tbody.appendChild(buildPermissionRow(desc));
+            });
+            for (const desc of PERMISSIONS_CATALOG) {
+                await queryOnePermission(desc);
+            }
         }
     </script>
 </body>
